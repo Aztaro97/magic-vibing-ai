@@ -5,12 +5,13 @@
   "type": "module",
   "exports": {
     ".": {
-      "react-server": "./src/index.rsc.ts",
       "default": "./src/index.ts"
     },
-    "./middlewares/admin": "./src/middlewares/admin.ts",
-    "./env": "./env.ts",
-    "./client": "./src/client.ts"
+    "./executions": {
+      "default": "./src/executions/index.ts",
+      "types": "./dist/executions.d.ts"
+    },
+    "./env": "./env.ts"
   },
   "license": "MIT",
   "scripts": {
