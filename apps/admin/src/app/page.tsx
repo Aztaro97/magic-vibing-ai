@@ -1,27 +1,35 @@
-import { Suspense } from "react";
+"use client";
 
-import { HydrateClient, prefetch, trpc } from "~/trpc/server";
+import { useMutation } from "@tanstack/react-query";
+
+import { Button } from "@acme/ui/button";
+
+import { useTRPC } from "~/trpc/react";
 
 export default function HomePage() {
-  prefetch(trpc.post.all.queryOptions());
+  const trpc = useTRPC();
+
+  const createMessage = useMutation(
+    trpc.message.create.mutationOptions({
+      onSuccess: async () => {},
+      onError: (err) => {},
+    }),
+  );
 
   return (
-    <HydrateClient>
+    <>
       <main className="container h-screen py-16">
         <div className="flex flex-col items-center justify-center gap-4">
           <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-            Create <span className="text-primary">T3</span> Turbo
+            Welcome to Home Page
           </h1>
-
-          <div className="w-full max-w-2xl overflow-y-scroll">
-            <Suspense
-              fallback={
-                <div className="flex w-full flex-col gap-4">Hellow Worlds</div>
-              }
-            ></Suspense>
-          </div>
+          <Button
+            onClick={() => createMessage.mutate({ message: "Hello World" })}
+          >
+            Create Message
+          </Button>
         </div>
       </main>
-    </HydrateClient>
+    </>
   );
 }

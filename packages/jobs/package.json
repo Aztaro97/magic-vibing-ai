@@ -27,6 +27,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@acme/agents": "workspace:*",
+    "@acme/e2b": "workspace:*",
     "@acme/eslint-config": "workspace:*",
     "@acme/prettier-config": "workspace:*",
     "@acme/tsconfig": "workspace:*",

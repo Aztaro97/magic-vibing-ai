@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@acme/eslint-config": "workspace:*",
+    "@acme/jobs": "workspace:*",
     "@acme/prettier-config": "workspace:*",
     "@acme/tsconfig": "workspace:*",
     "eslint": "catalog:",

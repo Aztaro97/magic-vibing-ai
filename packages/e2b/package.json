@@ -11,7 +11,12 @@
       "default": "./src/executions/index.ts",
       "types": "./dist/executions.d.ts"
     },
-    "./env": "./env.ts"
+    "./utils": {
+      "default": "./src/utils/index.ts",
+      "types": "./dist/utils.d.ts"
+    },
+    "./env": "./env.ts",
+    "./config": "./src/config/index.ts"
   },
   "license": "MIT",
   "scripts": {

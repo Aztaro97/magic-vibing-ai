@@ -603,6 +603,9 @@ importers:
         specifier: ^0.9.0
         version: 0.9.0(inngest@3.40.1(express@5.1.0)(next@15.3.2(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(typescript@5.8.3))
     devDependencies:
+      '@acme/e2b':
+        specifier: workspace:*
+        version: link:../e2b
       '@acme/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
@@ -612,9 +615,6 @@ importers:
       '@acme/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
-      '@types/react':
-        specifier: catalog:react19
-        version: 19.0.14
       eslint:
         specifier: 'catalog:'
         version: 9.27.0(jiti@2.4.2)
@@ -649,6 +649,9 @@ importers:
       '@acme/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
+      '@acme/jobs':
+        specifier: workspace:*
+        version: link:../jobs
       '@acme/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
@@ -800,6 +803,12 @@ importers:
         specifier: 'catalog:'
         version: 3.25.4
     devDependencies:
+      '@acme/agents':
+        specifier: workspace:*
+        version: link:../agents
+      '@acme/e2b':
+        specifier: workspace:*
+        version: link:../e2b
       '@acme/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint

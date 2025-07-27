@@ -1,3 +1,4 @@
 import { openai } from "@inngest/agent-kit";
+import { env } from "../../env";
 
-export const openAIModel = openai('gpt-3.5-turbo');
+export const openAIModel = openai({ model: "gpt-4o", apiKey: env.OPENAI_API_KEY });
