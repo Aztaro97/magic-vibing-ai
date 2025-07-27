@@ -13,4 +13,4 @@ export const helloWordFn = inngestClient.createFunction(
 			message: `Hello World ${event.data.message}`,
 		};
 	}
-);
+); 
