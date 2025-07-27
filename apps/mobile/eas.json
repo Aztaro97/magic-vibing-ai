@@ -1,0 +1,94 @@
+{
+  "cli": {
+    "version": ">= 4.1.2",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "22.12.0",
+      "pnpm": "9.15.4",
+      "ios": {
+        "resourceClass": "m-medium"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "distribution": "store",
+      "pnpm": "9.12.3",
+      "ios": {
+        "image": "latest"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "image": "latest"
+      },
+      "env": {
+        "EXPO_NO_DOTENV": "1",
+        "APP_ENV": "production",
+        "FLIPPER_DISABLE": "1"
+      }
+    },
+    "staging": {
+      "channel": "staging",
+      "distribution": "internal",
+      "pnpm": "9.12.3",
+      "ios": {
+        "image": "latest"
+      },
+      "android": {
+        "buildType": "apk",
+        "image": "latest"
+      },
+      "env": {
+        "APP_ENV": "staging",
+        "EXPO_NO_DOTENV": "1",
+        "FLIPPER_DISABLE": "1"
+      }
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "image": "latest"
+      },
+      "android": {
+        "image": "latest"
+      },
+      "env": {
+        "APP_ENV": "development",
+        "EXPO_NO_DOTENV": "1"
+      }
+    },
+    "development-simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true,
+        "image": "latest"
+      },
+      "android": {
+        "image": "latest"
+      },
+      "env": {
+        "APP_ENV": "development",
+        "EXPO_NO_DOTENV": "1"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

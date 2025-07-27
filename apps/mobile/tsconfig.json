@@ -1,0 +1,33 @@
+{
+  "extends": ["@acme/tsconfig/base.json"],
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@env": ["./src/lib/env.js"]
+    },
+    "esModuleInterop": true,
+    "checkJs": true,
+    "jsx": "react-native",
+    "moduleSuffixes": [".ios", ".android", ".native", ""]
+  },
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "docs",
+    "cli",
+    "android",
+    "ios",
+    "lint-staged.config.js"
+  ],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ]
+}
