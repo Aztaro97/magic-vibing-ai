@@ -22,7 +22,9 @@
     "postinstall": "pnpm lint:ws",
     "typecheck": "turbo run typecheck",
     "ui-add": "turbo run ui-add",
-    "fix:pkg": "pnpm manypkg fix"
+    "fix:pkg": "pnpm manypkg fix",
+    "template:build": "cd sandbox-templates && e2b template build --name magic-vibing-ai --cmd '/compile_page.sh'",
+    "template:publish": "cd sandbox-templates && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec"
   },
   "devDependencies": {
     "@acme/prettier-config": "workspace:*",

@@ -1,0 +1,17 @@
+# This is a config for E2B sandbox template.
+# You can use template ID (asnzczqenjr1egf5akn0) or template name (magic-vibing-ai) to create a sandbox:
+
+# Python SDK
+# from e2b import Sandbox, AsyncSandbox
+# sandbox = Sandbox("magic-vibing-ai") # Sync sandbox
+# sandbox = await AsyncSandbox.create("magic-vibing-ai") # Async sandbox
+
+# JS SDK
+# import { Sandbox } from 'e2b'
+# const sandbox = await Sandbox.create('magic-vibing-ai')
+
+team_id = "8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec"
+start_cmd = "/compile_page.sh"
+dockerfile = "e2b.Dockerfile"
+template_name = "magic-vibing-ai"
+template_id = "asnzczqenjr1egf5akn0"
