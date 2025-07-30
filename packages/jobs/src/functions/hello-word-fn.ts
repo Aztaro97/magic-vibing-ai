@@ -1,4 +1,3 @@
-import { codingAgentNetwork } from "@acme/agents";
 import { getSandbox } from "@acme/agents/utils";
 import { sbx } from "@acme/e2b/config";
 import { inngestClient } from "../client";
@@ -11,7 +10,7 @@ export const helloWordFn = inngestClient.createFunction(
 
 		const sandboxId = sbx.sandboxId
 
-		const result = await codingAgentNetwork.run(event.data.value)
+		// const result = await codingAgentNetwork.run(event.data.value)
 
 		const sandboxUrl = await step.run("get-sandbox-url", async () => {
 			const sandbox = await getSandbox(sandboxId);
@@ -22,8 +21,8 @@ export const helloWordFn = inngestClient.createFunction(
 		return {
 			url: sandboxUrl,
 			title: "Fragment",
-			files: result.state.data.files,
-			summary: result.state.data.summary,
+			// files: result.state.data.files,
+			// summary: result.state.data.summary,
 		};
 	}
 ); 
