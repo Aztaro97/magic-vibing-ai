@@ -1,0 +1,17 @@
+# This is a config for E2B sandbox template.
+# You can use template ID (5q5q9v9kflakcmilhqxe) or template name (react-native-expo-mobile) to create a sandbox:
+
+# Python SDK
+# from e2b import Sandbox, AsyncSandbox
+# sandbox = Sandbox("react-native-expo-mobile") # Sync sandbox
+# sandbox = await AsyncSandbox.create("react-native-expo-mobile") # Async sandbox
+
+# JS SDK
+# import { Sandbox } from 'e2b'
+# const sandbox = await Sandbox.create('react-native-expo-mobile')
+
+team_id = "8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec"
+start_cmd = "/compile_page.sh"
+dockerfile = "e2b.Dockerfile"
+template_name = "react-native-expo-mobile"
+template_id = "5q5q9v9kflakcmilhqxe"

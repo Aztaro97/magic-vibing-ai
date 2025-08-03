@@ -21,6 +21,6 @@ export const lastAssistantTextMessageContent = (result: any) => {
 
 export async function getSandbox(sandboxId: string) {
 	const sandbox = await Sandbox.connect(sandboxId);
-	await sandbox.setTimeout(5 * 60_000);
+	await sandbox.setTimeout(5 * 60_000); // 5 minutes
 	return sandbox;
 }
