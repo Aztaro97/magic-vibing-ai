@@ -14,7 +14,7 @@ export const helloWordFn = inngestClient.createFunction(
 
 		const sandboxUrl = await step.run("get-sandbox-url", async () => {
 			const sandbox = await getSandbox(sandboxId);
-			const host = sandbox.getHost(19000);
+			const host = sandbox.getHost(8081);
 			return `https://${host}`
 		})
 

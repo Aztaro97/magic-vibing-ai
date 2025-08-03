@@ -25,9 +25,11 @@
     "fix:pkg": "pnpm manypkg fix",
     "template:build:nextjs": "cd sandbox-templates && cd nextjs && e2b template build --name magic-web-ai --cmd '/compile_page.sh'",
     "template:publish:nextjs": "cd sandbox-templates && cd nextjs && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec",
-    "template:build:expo": "cd sandbox-templates && cd react-native-expo && e2b template build --name react-native-expo-mobile --cmd '/compile_page.sh'",
-    "template:publish:expo": "cd sandbox-templates && cd react-native-expo && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec",
-    "sandbox:logs": "e2b sandbox logs i8swnnryghjz66c5ek77r"
+    "template:build:react-native-expo": "cd sandbox-templates && cd react-native-expo && e2b template build --name react-native-expo-mobile --cmd '/compile_page.sh'",
+    "template:publish:react-native-expo": "cd sandbox-templates && cd react-native-expo && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec",
+    "sandbox:logs": "e2b sandbox logs i8swnnryghjz66c5ek77r",
+    "template:build:expo": "cd sandbox-templates && cd expo && e2b template build --name expo-web-app --cmd '/compile_page.sh'",
+    "template:publish:expo": "cd sandbox-templates && cd expo && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec"
   },
   "devDependencies": {
     "@acme/prettier-config": "workspace:*",

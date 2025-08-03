@@ -1,0 +1,17 @@
+# This is a config for E2B sandbox template.
+# You can use template ID (jii286hm23az9hhiiat0) or template name (expo-web-app) to create a sandbox:
+
+# Python SDK
+# from e2b import Sandbox, AsyncSandbox
+# sandbox = Sandbox("expo-web-app") # Sync sandbox
+# sandbox = await AsyncSandbox.create("expo-web-app") # Async sandbox
+
+# JS SDK
+# import { Sandbox } from 'e2b'
+# const sandbox = await Sandbox.create('expo-web-app')
+
+team_id = "8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec"
+start_cmd = "/compile_page.sh"
+dockerfile = "e2b.Dockerfile"
+template_name = "expo-web-app"
+template_id = "jii286hm23az9hhiiat0"

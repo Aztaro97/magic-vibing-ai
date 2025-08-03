@@ -6,7 +6,7 @@ export NEXT_PUBLIC_POSTHOG_HOST=""
 # and makes sure the Next.js app is (1) running and (2) the `/` page is compiled
 function ping_server() {
 	counter=0
-	response=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:19000")
+	response=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8081")
 	while [[ ${response} -ne 200 ]]; do
 	  let counter++
 	  if  (( counter % 20 == 0 )); then
@@ -14,9 +14,9 @@ function ping_server() {
         sleep 0.1
       fi
 
-	  response=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:19000")
+	  response=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8081")
 	done
 }
 
 ping_server &
-cd /home/user && npm start
+cd /home/user && npm run web
