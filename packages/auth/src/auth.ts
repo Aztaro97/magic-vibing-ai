@@ -31,10 +31,10 @@ export const config = {
     },
   },
   socialProviders: {
-    // google: {
-    // 	clientId: env.GOOGLE_CLIENT_ID,
-    // 	clientSecret: env.GOOGLE_CLIENT_SECRET,
-    // },
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID || "",
+      clientSecret: env.GOOGLE_CLIENT_SECRET || "",
+    },
   },
 
   // Allow any origin including Expo's deep links

@@ -1,4 +1,5 @@
 import type { BottomSheetScrollViewMethods } from "@gorhom/bottom-sheet";
+import type { BottomSheetScrollViewProps } from "@gorhom/bottom-sheet/src/components/bottomSheetScrollable/types";
 import type { KeyboardAwareScrollViewProps } from "react-native-keyboard-controller";
 import { memo } from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -7,7 +8,6 @@ import {
   createBottomSheetScrollableComponent,
   SCROLLABLE_TYPE,
 } from "@gorhom/bottom-sheet";
-import type {BottomSheetScrollViewProps} from "@gorhom/bottom-sheet/src/components/bottomSheetScrollable/types";
 
 // source https://kirillzyusko.github.io/react-native-keyboard-controller/docs/api/components/keyboard-aware-scroll-view
 /**

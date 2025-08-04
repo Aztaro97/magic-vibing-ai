@@ -1,4 +1,3 @@
- 
 import type { SvgProps } from "react-native-svg";
 import * as React from "react";
 import Svg, { Circle, Path, Polygon } from "react-native-svg";

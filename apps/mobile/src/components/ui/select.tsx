@@ -17,8 +17,6 @@ import type { InputControllerType } from "./input";
 import { Modal, useModal } from "./modal";
 import { Text } from "./text";
 
- 
-
 const selectTv = tv({
   slots: {
     container: "mb-4",
@@ -55,7 +53,10 @@ const selectTv = tv({
 
 const List = Platform.OS === "web" ? FlashList : BottomSheetFlatList;
 
-export interface OptionType { label: string; value: string | number }
+export interface OptionType {
+  label: string;
+  value: string | number;
+}
 
 interface OptionsProps {
   options: OptionType[];

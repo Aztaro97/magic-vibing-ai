@@ -9,6 +9,8 @@ export const env = createEnv({
         : z.string().min(1).optional(),
     NODE_ENV: z.enum(["development", "production"]).optional(),
     BETTER_AUTH_URL: z.string().min(1).optional(),
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   },
   client: {},
   experimental__runtimeEnv: {},

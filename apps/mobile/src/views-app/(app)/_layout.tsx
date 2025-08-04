@@ -1,4 +1,3 @@
- 
 import React, { useCallback, useEffect } from "react";
 import { Link, Redirect, SplashScreen, Tabs } from "expo-router";
 import { Pressable, Text } from "@/components/ui";
