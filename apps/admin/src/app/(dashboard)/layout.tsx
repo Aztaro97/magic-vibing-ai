@@ -1,9 +1,47 @@
-import React from "react";
+import type React from "react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function DashboardLayout({
+// import { SiteHeader } from "apps/web/components/dashboard/site-header";
+
+import { auth } from "@acme/auth";
+import { SidebarInset, SidebarProvider } from "@acme/ui/sidebar";
+
+import { AppSidebar } from "~/components/app-sidebar";
+
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  // Get current session and user information
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  const sessionUser = session?.user;
+  if (!sessionUser) {
+    redirect("/");
+  }
+
+  // Add active organization ID to user data
+  const userData = {
+    ...sessionUser,
+    image: sessionUser.image ?? null,
+  };
+
+  return (
+    <SidebarProvider>
+      <AppSidebar variant="inset" userData={userData} />
+      <SidebarInset>
+        {/* <SiteHeader /> */}
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              {children}
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }
