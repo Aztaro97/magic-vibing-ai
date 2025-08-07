@@ -3,11 +3,11 @@ import { z } from "zod";
 
 import { protectedProcedure } from "../trpc";
 
-export const messageRouter = {
+export const projectRouter = {
   create: protectedProcedure
     .input(
       z.object({
-        message: z.string(),
+        value: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -18,8 +18,15 @@ export const messageRouter = {
       //     },
       //   });
 
+      console.log("value ", input.value);
+
       return {
-        message: "Message sent",
+        id: "1",
       };
     }),
+  getMany: protectedProcedure.query(async ({ ctx }) => {
+    return {
+      message: "Projects fetched",
+    };
+  }),
 } satisfies TRPCRouterRecord;

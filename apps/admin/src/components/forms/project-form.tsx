@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpIcon, Loader2Icon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import TextareaAutosize from "react-textarea-autosize";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { cn } from "@acme/ui";
@@ -40,14 +41,15 @@ function ProjectForm() {
     trpc.projects.create.mutationOptions({
       onSuccess: (data) => {
         queryClient.invalidateQueries(trpc.projects.getMany.queryOptions());
-        router.push(`/projects/${data.id}`);
+        router.push(`/project/${data.id}`);
       },
-      onError: (error) => {},
+      onError: (error) => {
+        toast.error(error.message);
+      },
     }),
   );
 
   const onSubmit = async (vlaues: z.infer<typeof formSchema>) => {
-    console.log(vlaues);
     await createProject.mutateAsync({
       value: vlaues.value,
     });
