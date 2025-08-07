@@ -1,35 +1,37 @@
-"use client";
+import { Suspense } from "react";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { ErrorBoundary } from "react-error-boundary";
 
-import { useMutation } from "@tanstack/react-query";
+import ProjectView from "~/components/projects/project-view";
+import { getQueryClient, trpc } from "~/trpc/server";
 
-import { Button } from "@acme/ui/button";
+interface Props {
+  params: Promise<{
+    projectId: string;
+  }>;
+}
 
-import { useTRPC } from "~/trpc/react";
+export default async function Page({ params }: Props) {
+  const { projectId } = await params;
 
-export default function HomePage() {
-  const trpc = useTRPC();
-
-  const createMessage = useMutation(
-    trpc.message.create.mutationOptions({
-      onSuccess: async () => {},
-      onError: (err) => {},
+  const queryClient = getQueryClient();
+  void queryClient.prefetchQuery(
+    trpc.messages.getMany.queryOptions({
+      projectId,
     }),
   );
-
+  void queryClient.prefetchQuery(
+    trpc.projects.getOne.queryOptions({
+      id: projectId,
+    }),
+  );
   return (
-    <>
-      <main className="container h-screen py-16">
-        <div className="flex flex-col items-center justify-center gap-4">
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-            Welcome to Home Page
-          </h1>
-          <Button
-            onClick={() => createMessage.mutate({ message: "Hello World" })}
-          >
-            Create Message
-          </Button>
-        </div>
-      </main>
-    </>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ErrorBoundary fallback={<p>Error!</p>}>
+        <Suspense fallback={<p>Loading....</p>}>
+          <ProjectView projectId={projectId} />
+        </Suspense>
+      </ErrorBoundary>
+    </HydrationBoundary>
   );
 }
