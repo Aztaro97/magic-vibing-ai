@@ -1,11 +1,11 @@
 import { serve } from "inngest/next";
 
 import { inngestClient } from "@acme/jobs";
-import { helloWordFn } from "@acme/jobs/functions";
+import { codeAgentFn, helloWordFn } from "@acme/jobs/functions";
 
 export const runtime = "nodejs";
 
 export const { GET, POST, PUT } = serve({
-  client: inngestClient,
-  functions: [helloWordFn],
+	client: inngestClient,
+	functions: [helloWordFn, codeAgentFn],
 });

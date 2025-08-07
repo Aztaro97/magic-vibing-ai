@@ -639,6 +639,9 @@ importers:
       '@trpc/server':
         specifier: 'catalog:'
         version: 11.1.2(typescript@5.8.3)
+      random-word-slugs:
+        specifier: ^0.1.7
+        version: 0.1.7
       superjson:
         specifier: 2.2.2
         version: 2.2.2
@@ -806,6 +809,9 @@ importers:
       '@acme/agents':
         specifier: workspace:*
         version: link:../agents
+      '@acme/db':
+        specifier: workspace:*
+        version: link:../db
       '@acme/e2b':
         specifier: workspace:*
         version: link:../e2b
@@ -857,9 +863,6 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.2.7
         version: 1.2.7(@types/react-dom@19.1.5(@types/react@19.0.14))(@types/react@19.0.14)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@types/prismjs':
-        specifier: ^1.26.5
-        version: 1.26.5
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -909,6 +912,9 @@ importers:
       '@acme/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/prismjs':
+        specifier: ^1.26.5
+        version: 1.26.5
       '@types/react':
         specifier: catalog:react19
         version: 19.0.14
@@ -10063,6 +10069,9 @@ packages:
         optional: true
       '@types/react-dom':
         optional: true
+
+  random-word-slugs@0.1.7:
+    resolution: {integrity: sha512-8cyzxOIDeLFvwSPTgCItMXHGT5ZPkjhuFKUTww06Xg1dNMXuGxIKlARvS7upk6JXIm41ZKXmtlKR1iCRWklKmg==}
 
   randombytes@2.1.0:
     resolution: {integrity: sha512-vYl3iOX+4CKUWuxGi9Ukhie6fsqXqS9FE2Zaic4tNFD2N2QQaXOMFbuKK4QmDHC0JO6B1Zp41J0LpT0oR68amQ==}
@@ -22694,6 +22703,8 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.0.14
       '@types/react-dom': 19.1.5(@types/react@19.0.14)
+
+  random-word-slugs@0.1.7: {}
 
   randombytes@2.1.0:
     dependencies:

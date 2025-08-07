@@ -23,6 +23,7 @@
     "@acme/db": "workspace:*",
     "@acme/validators": "workspace:*",
     "@trpc/server": "catalog:",
+    "random-word-slugs": "^0.1.7",
     "superjson": "2.2.2",
     "zod": "catalog:"
   },

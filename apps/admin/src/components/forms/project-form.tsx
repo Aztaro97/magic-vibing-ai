@@ -50,7 +50,8 @@ function ProjectForm() {
   );
 
   const onSubmit = async (vlaues: z.infer<typeof formSchema>) => {
-    await createProject.mutateAsync({
+    console.log("Submitting project: " + vlaues.value);
+    createProject.mutate({
       value: vlaues.value,
     });
   };

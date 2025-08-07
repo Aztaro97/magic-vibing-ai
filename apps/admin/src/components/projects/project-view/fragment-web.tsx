@@ -2,11 +2,12 @@ import { useState } from "react";
 import { ExternalLinkIcon, RefreshCcwIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import type { Fragment } from "@acme/db";
 import { Button } from "@acme/ui/button";
 import Hint from "@acme/ui/hint";
 
 interface Props {
-  data: any;
+  data: Fragment;
 }
 function FragmentWeb({ data }: Props) {
   const [copied, setCopied] = useState(false);
