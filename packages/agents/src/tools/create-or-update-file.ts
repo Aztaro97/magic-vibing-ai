@@ -16,30 +16,35 @@ const FileItemSchema = z.object({
 	path: z.string().min(1, "path is required"),
 	content: z.string(),
 });
-const MultiFilesSchema = z.object({ files: z.array(FileItemSchema).min(1) });
-const SingleFileSchema = FileItemSchema;
-const ParamsSchema = z.union([MultiFilesSchema, SingleFileSchema]);
 type FileItem = z.infer<typeof FileItemSchema>;
-type Params = z.infer<typeof ParamsSchema>;
-
-function hasFiles(arg: Params): arg is z.infer<typeof MultiFilesSchema> {
-	return (arg as any).files !== undefined;
-}
 
 export const createOrUpdateFileTool = createTool({
 	name: "createOrUpdateFile",
 	description:
 		"Create or update one or more files in the sandbox. Paths must be relative (e.g. 'app/(tabs)/index.tsx').",
-	parameters: ParamsSchema,
-	handler: async (input: Params, { step, network }) => {
+	parameters: z.object({
+		files: z.array(z.object({ path: z.string().min(1), content: z.string() })).optional(),
+		path: z.string().optional(),
+		content: z.string().optional(),
+	}),
+	handler: async (input: unknown, { step, network }) => {
+		const params = z
+			.object({
+				files: z.array(FileItemSchema).optional(),
+				path: z.string().optional(),
+				content: z.string().optional(),
+			})
+			.parse(input);
 		const sandboxId = (network as any)?.state?.data?.sandboxId ?? sbx.sandboxId;
-		const files: FileItem[] = hasFiles(input)
-			? input.files
-			: [{ path: input.path, content: input.content }];
+		const files: FileItem[] = (params.files?.length)
+			? params.files
+			: (params.path && typeof params.content === "string")
+				? [{ path: params.path, content: params.content }]
+				: [];
 
 		const prepared: FileItem[] = files
-			.filter((f: FileItem) => Boolean(f) && typeof f.path === "string" && typeof f.content === "string")
-			.map((f: FileItem) => ({ path: normalizeRelativePath(f.path), content: f.content }));
+			.filter((f) => Boolean(f?.path))
+			.map((f) => ({ path: normalizeRelativePath(f.path), content: f.content }));
 
 		if (prepared.length === 0) {
 			return "Error: Path or files are required";
