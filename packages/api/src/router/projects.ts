@@ -1,4 +1,4 @@
-import { db, message, project } from "@acme/db";
+import { asc, db, eq, message, project } from "@acme/db";
 import { inngestClient } from "@acme/jobs";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
@@ -63,12 +63,27 @@ export const projectRouter = {
 
 			return result;
 		}),
-	getMany: protectedProcedure.input(z.object({ projectId: z.string() })).query(({ input: _input }) => {
-		return true
-	}),
-	getOne: protectedProcedure.input(z.object({ id: z.string() })).query(({ input: _input }) => {
-		return {
-			message: "Project fetched",
-		};
+	getOne: protectedProcedure
+		.input(z.object({ id: z.string().min(1, { message: "Id is required" }) }))
+		.query(async ({ input, ctx }) => {
+			const [existingProject] = await db
+				.select()
+				.from(project)
+				.where(eq(project.id, input.id) && eq(project.userId, ctx.session.user.id))
+				.limit(1);
+
+			if (!existingProject) {
+				throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+			}
+
+			return existingProject;
+		}),
+	getMany: protectedProcedure.query(async ({ ctx }) => {
+		const projects = await db
+			.select()
+			.from(project)
+			.where(eq(project.userId, ctx.session.user.id))
+			.orderBy(asc(project.updatedAt));
+		return projects;
 	}),
 } satisfies TRPCRouterRecord;

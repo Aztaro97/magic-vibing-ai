@@ -33,8 +33,6 @@ export default function MessageContainer({
     ),
   );
 
-  console.log("messages ", messages);
-
   useEffect(() => {
     const lastAssistantMessage = messages.findLast(
       (message) => message.role === "ASSISTANT",
