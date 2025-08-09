@@ -8,19 +8,29 @@ import {
 import { inngestClient } from "../client";
 
 import { codingAgentNetwork } from "@acme/agents";
-import { db, desc, eq, fragment, message } from "@acme/db";
-import { sbx } from "@acme/e2b/config";
+import { db, desc, eq, fragment, message, project } from "@acme/db";
+import { createExpoSandbox } from "@acme/e2b/config";
 
 interface AgentState {
 	summary: string;
 	files: Record<string, string>;
+	sandboxId?: string;
 }
 
 export const codeAgentFn = inngestClient.createFunction(
 	{ id: "code-agent" },
 	{ event: "code-agent/run" },
 	async ({ event, step }) => {
-		const sandboxId = sbx.sandboxId;
+		const sandboxId = await step.run("create-expo-sandbox", async () => {
+			const [proj] = await db
+				.select()
+				.from(project)
+				.where(eq(project.id, event.data.projectId))
+				.limit(1);
+
+			const sandbox = await createExpoSandbox({ projectName: proj?.name ?? String(event.data.projectId) });
+			return sandbox.sandboxId;
+		});
 
 		const previousMessage = await step.run("get-previous-message", async () => {
 			const formattedMessages: Message[] = [];
@@ -45,6 +55,7 @@ export const codeAgentFn = inngestClient.createFunction(
 			{
 				summary: "",
 				files: {},
+				sandboxId: undefined,
 			},
 			{
 				messages: previousMessage,
@@ -184,6 +195,9 @@ export const codeAgentFn = inngestClient.createFunction(
 		// });
 
 
+
+		// Make the created sandbox available to tools in the agent network
+		state.data.sandboxId = sandboxId;
 
 		const result = await codingAgentNetwork.run(event.data.value, { state });
 

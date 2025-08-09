@@ -1,4 +1,4 @@
-import { and, db, eq, message, project, user } from "@acme/db";
+import { and, db, eq, message, project } from "@acme/db";
 import { inngestClient } from "@acme/jobs";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
@@ -55,29 +55,7 @@ export const messageRouter = {
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
-			// Find user with their LLM keys
-			const existingUser = await db.query.user.findFirst({
-				where: eq(user.id, ctx.session.user.id),
-				with: {
-					llmKeys: true,
-				},
-			});
 
-			if (!existingUser) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Please Login",
-				});
-			}
-
-			const inUseKey = existingUser.llmKeys.find((k) => k.inUse === true);
-
-			if (!inUseKey) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Please Provide a api key!",
-				});
-			}
 
 			// Verify project exists and belongs to user
 			const existingProject = await db
@@ -122,9 +100,7 @@ export const messageRouter = {
 				data: {
 					value: input.value,
 					projectId: input.projectId,
-					apiKey: inUseKey.key,
-					model: inUseKey.model,
-					llm: inUseKey.llm,
+
 				},
 			});
 

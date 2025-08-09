@@ -1,56 +1,56 @@
 export const PROJECT_TEMPLATES = [
-  {
-    emoji: "🧠",
-    title: "Build an AI SaaS Landing Page",
-    prompt:
-      "Design a modern AI SaaS landing page with a clean, dark-mode-compatible layout. Include a hero section, features grid, pricing tiers, testimonials, and a footer. Support theme toggling via a prop. Focus on smooth section transitions, visually engaging gradients, and responsive layout for desktop and mobile. Use placeholder content and mock data to simulate a real product experience.",
-  },
-  {
-    emoji: "💬",
-    title: "Build a Chat App Interface",
-    prompt:
-      "Design a real-time chat app interface with a conversation list, active chat window, input box, and typing indicator using mock data and local state. Include status indicators (online/offline), timestamps, and smooth scroll behavior. Prioritize spacing, subtle animations, and a clean dark-mode UI for a polished messaging experience.",
-  },
-  {
-    emoji: "📅",
-    title: "Build a Calendar App",
-    prompt:
-      "Create a calendar app with monthly and weekly views, event creation modal, and event indicators. Use mock events and local state. Ensure responsive grid layout, hover effects, and consistent typography for a clear scheduling experience.",
-  },
-  {
-    emoji: "🧠",
-    title: "Build a Notes App",
-    prompt:
-      "Build a notes app with a sidebar for notebooks, a markdown editor, and a preview panel. Use local state to manage note creation, editing, and deletion. Focus on clean spacing, smooth transitions, and a distraction-free writing environment.",
-  },
-  {
-    emoji: "🧾",
-    title: "Build an Invoice Generator",
-    prompt:
-      "Create an invoice generator with editable client fields, line items, and a total summary. Add PDF export and mock data. Use clear typography, consistent field alignment, and minimalist styling for a professional interface.",
-  },
-  {
-    emoji: "📖",
-    title: "Build a Blog CMS",
-    prompt:
-      "Build a simple blog CMS interface with post list, rich text editor, and tag management using local state and mock data. Focus on layout clarity, well-styled form fields, and readable typography for content management.",
-  },
-  {
-    emoji: "🧳",
-    title: "Build a Travel Planner",
-    prompt:
-      "Create a travel planner UI with itinerary cards, a destination search bar, and trip details modal. Use local state and mock data. Prioritize clean card layout, subtle animations, and intuitive grouping for a modern UX.",
-  },
-  {
-    emoji: "🧮",
-    title: "Build a Budget Tracker",
-    prompt:
-      "Design a personal budget tracker with category breakdown, expense input form, and summary stats using local state and mock data. Use chart placeholders, color-coded categories, and clean spacing for financial clarity.",
-  },
-  {
-    emoji: "📈",
-    title: "Build a Portfolio Analytics Dashboard",
-    prompt:
-      "Create a portfolio analytics dashboard with chart placeholders, metric cards, and a filterable activity table using local state. Use a responsive layout, balanced whitespace, and visual hierarchy for a polished finance UI.",
-  },
+	{
+		emoji: "👋",
+		title: "Build a Mobile Onboarding Flow",
+		prompt:
+			"Create a multi-screen onboarding flow for a React Native + Expo app. Include a carousel with 3–4 slides, progress dots, Skip and Get Started actions, and a final permissions screen placeholder. Use React Navigation (stack) and theme-aware styles. Keep copy and images as mock placeholders.",
+	},
+	{
+		emoji: "💬",
+		title: "Build a Chat Messaging App",
+		prompt:
+			"Design a mobile chat experience with a conversations list, chat screen, message bubbles, typing indicator, and read receipts using mock data. Include pull-to-refresh, sticky headers by day, and an input bar with send + attachment actions. Use React Navigation (stack) and a clean dark theme.",
+	},
+	{
+		emoji: "🗺️",
+		title: "Build a Travel Planner (Mobile)",
+		prompt:
+			"Create a travel planner app with bottom tabs: Trips, Discover, Profile. In Trips, show upcoming trip cards, checklist items, and a simple day-by-day plan. In Discover, list popular places with images and a map preview placeholder. Use mock data and smooth transitions.",
+	},
+	{
+		emoji: "🏃",
+		title: "Build a Fitness Tracker",
+		prompt:
+			"Build a fitness tracker with an activity dashboard (daily rings), workouts list, and a workout details screen with metrics. Include a start workout CTA (no real sensors), basic charts placeholders, and persistent mock state. Use bottom tabs and theme-aware components.",
+	},
+	{
+		emoji: "🛒",
+		title: "Build an E‑Commerce App",
+		prompt:
+			"Create a shopping app with product grid, product details, cart, and checkout summary screens. Add a favorites list and a mini cart badge in the tab bar. Use mock products and local cart state. Focus on touch targets, safe area spacing, and fluid transitions.",
+	},
+	{
+		emoji: "📝",
+		title: "Build a Notes App (Mobile)",
+		prompt:
+			"Build a notes app with folders list, notes list, note editor screen, and search. Support pinned notes, tags, and basic formatting placeholders. Use local state and mock data; emphasize keyboard handling, smooth list performance, and dark mode.",
+	},
+	{
+		emoji: "💳",
+		title: "Build a Personal Finance Tracker",
+		prompt:
+			"Design a finance tracker with transactions list, categories, monthly budgets, and insights tabs. Include charts placeholders, filters, and an add-transaction flow. Use mock data and ensure performant lists and accessible color choices.",
+	},
+	{
+		emoji: "📚",
+		title: "Build a Learning App",
+		prompt:
+			"Create a learning app with Home (courses grid), Course (lessons list), and Lesson (content + progress) screens. Include continue-watching, download placeholders, and progress tracking with mock state. Use React Navigation (stack + tabs).",
+	},
+	{
+		emoji: "🎧",
+		title: "Build a Music Player UI",
+		prompt:
+			"Build a music app with a library list, Now Playing screen (artwork, scrubber, controls), and a persistent mini-player. Include playlists, queue placeholder, and basic animations. Use dummy audio state only; focus on polished mobile UI/UX.",
+	},
 ] as const;
