@@ -52,6 +52,7 @@ export const messageRouter = {
 					.min(1, { message: "Prompt is required" })
 					.max(1000, { message: "Prompt is too long" }),
 				projectId: z.string().min(1, { message: "Project Id is required" }),
+				model: z.string().min(1, { message: "Model is required" }),
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -74,6 +75,15 @@ export const messageRouter = {
 					code: "NOT_FOUND",
 					message: "Project Not Found",
 				});
+			}
+
+
+			// UPDATE PROJECT MODEL IF IT'S NOT THE SAME
+			if (existingProject[0]?.model !== input.model) {
+				await db
+					.update(project)
+					.set({ model: input.model })
+					.where(eq(project.id, input.projectId));
 			}
 
 			// Create the message
@@ -100,7 +110,7 @@ export const messageRouter = {
 				data: {
 					value: input.value,
 					projectId: input.projectId,
-
+					model: input.model,
 				},
 			});
 

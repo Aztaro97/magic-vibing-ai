@@ -26,6 +26,7 @@ interface TreeViewProps {
 }
 
 function TreeView({ data, onSelect, value }: TreeViewProps) {
+  console.log("data", data);
   return (
     <SidebarProvider>
       <Sidebar collapsible="none" className="w-full">

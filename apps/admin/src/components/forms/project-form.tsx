@@ -10,10 +10,12 @@ import TextareaAutosize from "react-textarea-autosize";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { DEFAULT_MODEL } from "@acme/agents/constants";
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { Form, FormField } from "@acme/ui/form";
 
+import { ModelSelectForm } from "~/components/forms/model-select-form";
 import { PROJECT_TEMPLATES } from "~/constants/data";
 import { useTRPC } from "~/trpc/react";
 
@@ -22,6 +24,7 @@ const formSchema = z.object({
     .string()
     .min(1, { message: "Value is required" })
     .max(1000, { message: "Value is too long" }),
+  model: z.string(),
 });
 
 function ProjectForm() {
@@ -34,6 +37,7 @@ function ProjectForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       value: "",
+      model: DEFAULT_MODEL,
     },
   });
 
@@ -53,6 +57,7 @@ function ProjectForm() {
     console.log("Submitting project: " + vlaues.value);
     createProject.mutate({
       value: vlaues.value,
+      model: vlaues.model,
     });
   };
 
@@ -102,12 +107,15 @@ function ProjectForm() {
           />
 
           <div className="flex items-end justify-between gap-x-2 pt-2">
-            <div className="text-muted-foreground font-mono text-[10px]">
-              <kbd className="bg-muted text-muted-foreground pointer-events-none ml-auto inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium select-none">
-                <span>&#8984;</span>Enter
-              </kbd>
-              &nbsp;to submit
-            </div>
+            <ModelSelectForm
+              value={form.watch("model")}
+              onChange={(model) => {
+                console.log("Model changed: " + model);
+                form.setValue("model" as any, model as any, {
+                  shouldDirty: true,
+                });
+              }}
+            />
             <Button
               disabled={isButtonDisabled}
               className={cn(

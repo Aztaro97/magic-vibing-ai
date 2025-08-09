@@ -12,6 +12,7 @@ export const projectRouter = {
 		.input(
 			z.object({
 				value: z.string(),
+				model: z.string().default("claude-3-5-sonnet-latest"),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -28,6 +29,7 @@ export const projectRouter = {
 						name: generateSlug(2, {
 							format: "kebab",
 						}),
+						model: input.model,
 					})
 					.returning();
 
@@ -55,6 +57,7 @@ export const projectRouter = {
 				data: {
 					value: input.value,
 					projectId: result.id,
+					model: input.model,
 				},
 			});
 

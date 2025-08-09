@@ -98,6 +98,8 @@ export const FileExplorer = ({ files }: FileExplorerProps) => {
     return filekeys.length > 0 ? filekeys[0] : null;
   });
 
+  console.log("files", files);
+
   const treeData = useMemo(() => {
     return convertFilesToTreeItems(files);
   }, [files]);

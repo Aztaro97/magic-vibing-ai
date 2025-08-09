@@ -7,7 +7,7 @@ import {
 } from "@inngest/agent-kit";
 import { inngestClient } from "../client";
 
-import { codingAgentNetwork } from "@acme/agents";
+import { buildCodeAgent, buildCodingAgentNetwork, getDynamicModel } from "@acme/agents";
 import { db, desc, eq, fragment, message, project } from "@acme/db";
 import { createExpoSandbox } from "@acme/e2b/config";
 
@@ -63,143 +63,22 @@ export const codeAgentFn = inngestClient.createFunction(
 		);
 
 
-		// const codeAgent = createAgent<AgentState>({
-		// 	name: "code-agent",
-		// 	description: "An Expert coding agent",
-		// 	system: PROMPT,
-		// 	model: getLLMModel(event.data.llm, event.data.apiKey, event.data.model),
-		// 	tools: [
-		// 		createTool({
-		// 			name: "terminal",
-		// 			description: "use terminal to run the commands",
-		// 			parameters: z.object({
-		// 				command: z.string(),
-		// 			}),
-		// 			handler: async ({ command }, { step }) => {
-		// 				return await step?.run("terminal", async () => {
-		// 					const buffers = { stdout: "", stderr: "" };
-
-		// 					try {
-		// 						const sandbox = await getSandbox(sandboxId);
-		// 						const result = await sandbox.commands.run(command, {
-		// 							onStdout: (data: string) => {
-		// 								buffers.stdout += data;
-		// 							},
-		// 							onStderr: (data: string) => {
-		// 								buffers.stderr += data;
-		// 							},
-		// 						});
-		// 						return result.stdout;
-		// 					} catch (error) {
-		// 						console.log(
-		// 							`Command Failed: ${error} \n stdout: ${buffers.stdout} \n stderror: ${buffers.stderr}`
-		// 						);
-		// 						return `Command Failed: ${error} \n stdout: ${buffers.stdout} \n stderror: ${buffers.stderr}`;
-		// 					}
-		// 				});
-		// 			},
-		// 		}),
-		// 		createTool({
-		// 			name: "createOrUploadFiles",
-		// 			description: "Create or Update files in the sandbox",
-		// 			parameters: z.object({
-		// 				files: z.array(
-		// 					z.object({
-		// 						path: z.string(),
-		// 						content: z.string(),
-		// 					})
-		// 				),
-		// 			}),
-		// 			handler: async (
-		// 				{ files },
-		// 				{ step, network }: Tool.Options<AgentState>
-		// 			) => {
-		// 				const newFiles = await step?.run(
-		// 					"createOrUploadFiles",
-		// 					async () => {
-		// 						try {
-		// 							const updatedFiles = network.state.data.files || {};
-		// 							const sandbox = await getSandbox(sandboxId);
-		// 							for (const file of files) {
-		// 								await sandbox.files.write(file.path, file.content);
-		// 								updatedFiles[file.path] = file.content;
-		// 							}
-
-		// 							return updatedFiles;
-		// 						} catch (error) {
-		// 							return "Error: " + error;
-		// 						}
-		// 					}
-		// 				);
-		// 				if (typeof newFiles === "object") {
-		// 					network.state.data.files = newFiles;
-		// 				}
-		// 			},
-		// 		}),
-		// 		createTool({
-		// 			name: "readFiles",
-		// 			description: "Read files from the sandbox",
-		// 			parameters: z.object({
-		// 				files: z.array(z.string()),
-		// 			}),
-		// 			handler: async ({ files }, { step }) => {
-		// 				return await step?.run("readFiles", async () => {
-		// 					try {
-		// 						const sandbox = await getSandbox(sandboxId);
-		// 						const contents = [];
-		// 						for (const file of files) {
-		// 							const content = await sandbox.files.read(file);
-		// 							contents.push({ path: file, content });
-		// 						}
-
-		// 						return JSON.stringify(contents);
-		// 					} catch (error) {
-		// 						return "Error: " + error;
-		// 					}
-		// 				});
-		// 			},
-		// 		}),
-		// 	],
-
-		// 	lifecycle: {
-		// 		onResponse: async ({ result, network }) => {
-		// 			const lastAssistantTextMessageText =
-		// 				lastAssistantTextMessageContent(result);
-
-		// 			if (lastAssistantTextMessageText && network) {
-		// 				if (lastAssistantTextMessageText.includes("<task_summary>")) {
-		// 					network.state.data.summary = lastAssistantTextMessageText;
-		// 				}
-		// 			}
-
-		// 			return result;
-		// 		},
-		// 	},
-		// });
-
-
-
-		// const network = createNetwork<AgentState>({
-		// 	name: "coding-agent-network",
-		// 	agents: [codeAgent],
-		// 	maxIter: 5,
-		// 	defaultState: state,
-		// 	router: async ({ network }) => {
-		// 		const summary = network.state.data.summary;
-		// 		if (summary) {
-		// 			return;
-		// 		}
-
-		// 		return codeAgent;
-		// 	},
-		// });
-
-
 
 		// Make the created sandbox available to tools in the agent network
 		state.data.sandboxId = sandboxId;
 
-		const result = await codingAgentNetwork.run(event.data.value, { state });
+		// Choose model dynamically based on selected project model (from DB) or event
+		const [proj] = await db
+			.select()
+			.from(project)
+			.where(eq(project.id, event.data.projectId))
+			.limit(1);
+
+		const modelName = (event.data).model ?? proj?.model ?? "claude-3-5-sonnet-latest";
+
+		const dynamicAgent = buildCodeAgent(getDynamicModel(modelName));
+		const network = buildCodingAgentNetwork(dynamicAgent);
+		const result = await network.run(event.data.value, { state });
 
 		const isError =
 			!result.state.data.summary ||

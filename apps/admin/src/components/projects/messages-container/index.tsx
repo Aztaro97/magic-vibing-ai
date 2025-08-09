@@ -33,16 +33,18 @@ export default function MessageContainer({
     ),
   );
 
+  console.log("messages ", messages);
+
   useEffect(() => {
     const lastAssistantMessage = messages.findLast(
       (message) => message.role === "ASSISTANT",
     );
 
     if (
-      lastAssistantMessage?.Fragment &&
+      lastAssistantMessage?.fragment &&
       lastAssistantMessage.id !== lastAssistantMessageRef.current
     ) {
-      setActiveFragment(lastAssistantMessage.Fragment);
+      setActiveFragment(lastAssistantMessage.fragment);
       lastAssistantMessageRef.current = lastAssistantMessage.id;
     }
   }, [messages, setActiveFragment]);
@@ -63,10 +65,10 @@ export default function MessageContainer({
               key={message.id}
               content={message.content}
               role={message.role}
-              fragment={message.Fragment}
+              fragment={message.fragment}
               createdAt={message.createdAt}
-              isActiveFragment={activeFragment?.id === message.Fragment?.id}
-              onFragmentClick={() => setActiveFragment(message.Fragment)}
+              isActiveFragment={activeFragment?.id === message.fragment?.id}
+              onFragmentClick={() => setActiveFragment(message.fragment)}
               type={message.type}
             />
           ))}

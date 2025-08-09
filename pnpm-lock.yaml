@@ -78,6 +78,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@acme/agents':
+        specifier: workspace:*
+        version: link:../../packages/agents
       '@acme/api':
         specifier: workspace:*
         version: link:../../packages/api
