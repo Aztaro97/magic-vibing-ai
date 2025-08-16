@@ -35,6 +35,12 @@ export const LLM_MODELS: ModelOption[] = [
 		provider: "anthropic",
 		name: "Anthropic",
 		models: [
+			"claude-opus-4-0",
+			"claude-opus-4-20250514",
+			"claude-sonnet-4-0",
+			"claude-sonnet-4-20250514",
+			"claude-3-7-sonnet-latest",
+			"claude-3-7-sonnet-20250219",
 			"claude-3-5-sonnet-latest",
 			"claude-3-5-haiku-latest",
 			"claude-3-opus-latest",
@@ -42,5 +48,5 @@ export const LLM_MODELS: ModelOption[] = [
 	},
 ];
 
-export const DEFAULT_MODEL = "claude-3-5-sonnet-latest";
+export const DEFAULT_MODEL = "claude-opus-4-0";
 

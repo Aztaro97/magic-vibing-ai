@@ -12,7 +12,7 @@ export const projectRouter = {
 		.input(
 			z.object({
 				value: z.string(),
-				model: z.string().default("claude-3-5-sonnet-latest"),
+				model: z.string().default("claude-opus-4-0"),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {

@@ -74,7 +74,7 @@ export const codeAgentFn = inngestClient.createFunction(
 			.where(eq(project.id, event.data.projectId))
 			.limit(1);
 
-		const modelName = (event.data).model ?? proj?.model ?? "claude-3-5-sonnet-latest";
+		const modelName = (event.data).model ?? proj?.model ?? "claude-opus-4-0";
 
 		const dynamicAgent = buildCodeAgent(getDynamicModel(modelName));
 		const network = buildCodingAgentNetwork(dynamicAgent);
