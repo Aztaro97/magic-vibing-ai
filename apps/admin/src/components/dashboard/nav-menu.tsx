@@ -36,12 +36,11 @@ export function NavMain({
             <SidebarMenuButton
               tooltip={"Create Project"}
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-              onClick={() => {
-                setDialogOpen(true);
-              }}
             >
-              <PlusCircleIcon />
-              <span>Create Project</span>
+              <Link href="/" className="flex items-center gap-2">
+                <PlusCircleIcon className="h-4 w-4" />
+                <span>Create Project</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

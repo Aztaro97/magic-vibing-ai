@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, Settings, User } from "lucide-react";
+import { LayoutGrid, LogOut, Settings, User } from "lucide-react";
 
 import { signOut, useSession } from "@acme/auth/client";
 import {
@@ -86,6 +86,12 @@ const Navbar = () => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard">
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  <span>Projects</span>
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/profile">
                   <User className="mr-2 h-4 w-4" />

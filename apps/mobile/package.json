@@ -6,6 +6,7 @@
   "scripts": {
     "clean": "git clean -xdf .expo .turbo node_modules",
     "start": "cross-env EXPO_NO_DOTENV=1 npx expo start -c",
+    "start:tunnel": "cross-env EXPO_NO_DOTENV=1 npx expo start -c --tunnel --port 8082",
     "dev": "cross-env APP_ENV=development pnpm run start -c",
     "dev:staging": "cross-env APP_ENV=staging pnpm run start",
     "dev:android": "expo start --android",

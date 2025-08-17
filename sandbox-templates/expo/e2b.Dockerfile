@@ -24,7 +24,9 @@ RUN npx --yes create-expo-app@latest . --template tabs
 ENV PORT=8081
 ENV EXPO_WEB_PORT=8081
 ENV EXPO_NO_INTERACTIVE=1
-ENV EXPO_TUNNEL_SUBDOMAIN=expo-web-app
+
+# Set the subdomain for the Expo tunnel and ensure w
+ENV EXPO_TUNNEL_SUBDOMAIN=expo-web-app-80828384
 
 # Move the Expo app contents to the home directory
 RUN mv /home/user/expo-app/* /home/user/ && mv /home/user/expo-app/.[^.]* /home/user/ 2>/dev/null || true && rm -rf /home/user/expo-app

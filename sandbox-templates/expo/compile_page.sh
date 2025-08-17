@@ -16,6 +16,11 @@ export EXPO_WEB_PORT="${EXPO_WEB_PORT:-8081}"
 # When set, Expo's ngrok tunnel will use this subdomain
 export EXPO_TUNNEL_SUBDOMAIN="${EXPO_TUNNEL_SUBDOMAIN:-expo-web-app}"
 
+# If an ngrok authtoken is provided, configure @expo/ngrok to use it
+if [[ -n "${NGROK_AUTHTOKEN:-}" ]]; then
+  npx --yes @expo/ngrok@^4.1.0 config add-authtoken "${NGROK_AUTHTOKEN}" >/dev/null 2>&1 || true
+fi
+
 # Wait until the server responds on the configured port
 function ping_server() {
   local counter=0

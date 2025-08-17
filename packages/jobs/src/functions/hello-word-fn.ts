@@ -8,7 +8,7 @@ export const helloWordFn = inngestClient.createFunction(
 	{ event: "hello-word-fn" },
 	async ({ event, step }) => {
 		const sandboxId = await step.run("create-expo-sandbox", async () => {
-			const sandbox = await createExpoSandbox({ projectName: "hello-word" });
+			const sandbox = await createExpoSandbox("create", { projectName: "hello-word" });
 			return sandbox.sandboxId;
 		});
 

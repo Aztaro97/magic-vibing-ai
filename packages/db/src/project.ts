@@ -6,6 +6,8 @@ export const project = pgTable("project", {
 		.$defaultFn(() => crypto.randomUUID()),
 	name: text("name").notNull(),
 	userId: text("user_id").notNull(),
+	sandboxId: text("sandbox_id"),
+	subdomain: text("subdomain"),
 	model: text("model").notNull().default("claude-opus-4-0"),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),

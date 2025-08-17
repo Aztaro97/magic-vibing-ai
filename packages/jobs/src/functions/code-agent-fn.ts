@@ -9,7 +9,7 @@ import { inngestClient } from "../client";
 
 import { buildCodeAgent, buildCodingAgentNetwork, getDynamicModel } from "@acme/agents";
 import { db, desc, eq, fragment, message, project } from "@acme/db";
-import { createExpoSandbox } from "@acme/e2b/config";
+import { prepareContainerForProject } from "@acme/e2b";
 
 interface AgentState {
 	summary: string;
@@ -21,15 +21,12 @@ export const codeAgentFn = inngestClient.createFunction(
 	{ id: "code-agent" },
 	{ event: "code-agent/run" },
 	async ({ event, step }) => {
-		const sandboxId = await step.run("create-expo-sandbox", async () => {
-			const [proj] = await db
-				.select()
-				.from(project)
-				.where(eq(project.id, event.data.projectId))
-				.limit(1);
 
-			const sandbox = await createExpoSandbox({ projectName: proj?.name ?? String(event.data.projectId) });
-			return sandbox.sandboxId;
+
+		const sandboxId = await step.run("ensure-expo-sandbox", async () => {
+
+			const container = await prepareContainerForProject(event.data.projectId);
+			return container.sandboxId;
 		});
 
 		const previousMessage = await step.run("get-previous-message", async () => {
