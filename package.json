@@ -30,11 +30,13 @@
     "template:publish:react-native-expo": "cd sandbox-templates && cd react-native-expo && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec",
     "sandbox:logs": "e2b sandbox logs i8swnnryghjz66c5ek77r",
     "template:build:expo": "cd sandbox-templates && cd expo && e2b template build --name expo-web-app --cmd '/compile_page.sh'",
-    "template:publish:expo": "cd sandbox-templates && cd expo && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec"
+    "template:publish:expo": "cd sandbox-templates && cd expo && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@acme/prettier-config": "workspace:*",
     "@turbo/gen": "^2.5.1",
+    "husky": "^9.1.7",
     "prettier": "catalog:",
     "turbo": "^2.5.1",
     "typescript": "catalog:"
