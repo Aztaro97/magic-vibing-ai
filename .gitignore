@@ -40,6 +40,9 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.production
+.env.staging
+.env.development
 
 # vercel
 .vercel
@@ -50,3 +53,6 @@ dist/
 
 # turbo
 .turbo
+
+
+
