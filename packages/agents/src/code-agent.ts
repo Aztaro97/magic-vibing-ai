@@ -49,7 +49,7 @@ export function getDynamicModel(modelName: string) {
 	return createAnthropicModel(modelName);
 }
 
-export function buildCodeAgent(model: ReturnType<typeof createAnthropicModel> | ReturnType<typeof createOpenAIModel>) {
+export function buildCodeAgent(model: ReturnType<typeof createAnthropicModel> | ReturnType<typeof createOpenAIModel> | ReturnType<typeof createGeminiModel>) {
 	return createAgent({
 		name: "code-agent",
 		description: `Expert in coding agent `,

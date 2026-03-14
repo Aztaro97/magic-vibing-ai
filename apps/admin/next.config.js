@@ -15,6 +15,7 @@ const config = {
     "@acme/validators",
     "@acme/pusher",
     "@acme/jobs",
+    "@acme/error-handler",
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

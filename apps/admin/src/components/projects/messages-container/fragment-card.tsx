@@ -15,31 +15,28 @@ function FragmentCard({
   onFragmentClick,
 }: FragmentProps) {
   return (
-    <>
-      <button
-        className={cn(
-          "bg-muted hover:bg-secondary flex w-fit items-start gap-2 rounded-lg border p-3 text-start transition-colors",
-          isActiveFragment &&
-            "bg-primary text-primary-foreground border-primary hover:bg-primary",
-        )}
-        onClick={() => {
-          if (fragment) {
-            onFragmentClick(fragment);
-          }
-        }}
-      >
-        <Code2Icon className="mt-0.5 size-4" />
-        <div className="flex flex-1 flex-col">
-          <span className="line-clamp-1 text-sm font-medium">
-            {fragment?.title}
-          </span>
-          <span className="text-sm">Preview</span>
-        </div>
-        <div className="mt-0.5 flex items-center justify-center">
-          <ChevronRightIcon className="size-4" />
-        </div>
-      </button>
-    </>
+    <button
+      className={cn(
+        "flex w-fit items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-start transition-all duration-150",
+        isActiveFragment
+          ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+          : "bg-muted/50 hover:bg-muted hover:border-border",
+      )}
+      onClick={() => {
+        if (fragment) {
+          onFragmentClick(fragment);
+        }
+      }}
+    >
+      <Code2Icon className="h-4 w-4 shrink-0 opacity-70" />
+      <div className="flex flex-col">
+        <span className="text-xs font-medium">{fragment?.title}</span>
+        <span className="text-muted-foreground text-[11px]">
+          Click to preview
+        </span>
+      </div>
+      <ChevronRightIcon className="h-3.5 w-3.5 opacity-50" />
+    </button>
   );
 }
 
