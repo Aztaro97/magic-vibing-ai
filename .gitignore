@@ -54,6 +54,12 @@ dist/
 # turbo
 .turbo
 
+# Agents Skills
+.agents/
+.opencode/
+.claude/
+
+
 
 
 

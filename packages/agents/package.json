@@ -33,6 +33,6 @@
   "prettier": "@acme/prettier-config",
   "dependencies": {
     "@acme/error-handler": "workspace:*",
-    "@inngest/agent-kit": "^0.13.2"
+    "@inngest/agent-kit": "^0.9.0"
   }
 }
