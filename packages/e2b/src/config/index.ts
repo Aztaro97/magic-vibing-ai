@@ -58,10 +58,33 @@ export async function createExpoSandbox(
 
 		return sandbox;
 	} catch (error) {
-		console.error(error)
+		console.error(`[e2b] Sandbox ${operation} failed:`, error);
 		throw error
 	}
 }
 
-// Backward-compatible singleton for places still importing `sbx`
-export const sbx = await createExpoSandbox("create");
+// Lazy singleton — initialized on first use, not at import time.
+// This prevents top-level-await crashes (e.g. rate limit at startup).
+let _sbx: Sandbox | null = null;
+
+export async function getDefaultSandbox(): Promise<Sandbox> {
+	if (!_sbx) {
+		_sbx = await createExpoSandbox("create");
+	}
+	return _sbx;
+}
+
+/**
+ * @deprecated Use `getDefaultSandbox()` instead.
+ * Kept for backward compatibility — will throw if accessed before init.
+ */
+export const sbx = new Proxy({} as Sandbox, {
+	get(_target, prop) {
+		if (!_sbx) {
+			throw new Error(
+				"Sandbox not initialized. Use getDefaultSandbox() or pass a sandboxId directly."
+			);
+		}
+		return (_sbx as any)[prop];
+	},
+});

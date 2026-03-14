@@ -1,7 +1,6 @@
 import { createTool } from "@inngest/agent-kit";
 import { z } from "zod";
 
-import { sbx } from "@acme/e2b/config";
 import { getSandbox } from "@acme/e2b/utils";
 
 export const readFilesTool = createTool({
@@ -13,7 +12,10 @@ export const readFilesTool = createTool({
 	handler: async ({ files }, { step, network }) => {
 		return await step?.run("readFiles", async () => {
 			try {
-				const targetSandboxId = (network as any)?.state?.data?.sandboxId ?? sbx.sandboxId;
+				const targetSandboxId = (network as any)?.state?.data?.sandboxId;
+				if (!targetSandboxId) {
+					return "Error: No sandbox available. The development environment may not be ready yet.";
+				}
 				const sandbox = await getSandbox(targetSandboxId);
 				const contents = [];
 				for (const file of files) {
@@ -25,7 +27,7 @@ export const readFilesTool = createTool({
 				}
 				return JSON.stringify(contents);
 			} catch (error) {
-				return "Error: " + error;
+				return "Error: " + (error instanceof Error ? error.message : error);
 			}
 		});
 	},
