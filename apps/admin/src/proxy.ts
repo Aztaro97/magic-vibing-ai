@@ -13,7 +13,7 @@ const publicPaths = [
 ];
 
 // Main middleware function that handles authentication with public path exceptions
-export default function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Check if the current path is a public path

@@ -17,7 +17,7 @@
   "scripts": {
     "build": "pnpm with-env tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "pnpm with-env npx --ignore-scripts=false inngest-cli@latest dev",
+    "dev": "pnpm with-env npx  inngest-cli@latest dev",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
