@@ -105,14 +105,22 @@ export const messageRouter = {
 			}
 
 			// Send to Inngest for processing
-			await inngestClient.send({
-				name: "code-agent/run",
-				data: {
-					value: input.value,
-					projectId: input.projectId,
-					model: input.model,
-				},
-			});
+			try {
+				await inngestClient.send({
+					name: "code-agent/run",
+					data: {
+						value: input.value,
+						projectId: input.projectId,
+						model: input.model,
+					},
+				});
+			} catch (error) {
+				console.error("[api] Failed to dispatch agent job:", error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Failed to start the AI agent. Please try again.",
+				});
+			}
 
 			return createdMessage;
 		}),

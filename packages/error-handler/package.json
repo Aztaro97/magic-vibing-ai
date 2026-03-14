@@ -1,5 +1,5 @@
 {
-  "name": "@acme/jobs",
+  "name": "@acme/error-handler",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,35 +8,39 @@
       "types": "./dist/index.d.ts",
       "default": "./src/index.ts"
     },
-    "./functions": {
-      "types": "./dist/functions.d.ts",
-      "default": "./src/functions/index.ts"
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "default": "./src/server/index.ts"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./src/client/index.ts"
+    },
+    "./shared": {
+      "types": "./dist/shared/index.d.ts",
+      "default": "./src/shared/index.ts"
     }
   },
   "license": "MIT",
   "scripts": {
-    "build": "pnpm with-env tsc",
+    "build": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "pnpm with-env npx --ignore-scripts=false inngest-cli@latest dev",
+    "dev": "tsc --watch",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
-    "with-env": "dotenv -e ../../.env --"
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@t3-oss/env-nextjs": "^0.13.0",
-    "inngest": "^3.52.6",
+    "@acme/pusher": "workspace:*",
+    "pusher-js": "^8.4.0",
+    "react": "catalog:react19",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@acme/agents": "workspace:*",
-    "@acme/db": "workspace:*",
-    "@acme/e2b": "workspace:*",
-    "@acme/error-handler": "workspace:*",
     "@acme/eslint-config": "workspace:*",
     "@acme/prettier-config": "workspace:*",
-    "@acme/pusher": "workspace:*",
     "@acme/tsconfig": "workspace:*",
+    "@types/react": "catalog:react19",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"

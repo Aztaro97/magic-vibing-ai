@@ -1,7 +1,6 @@
 import { createTool } from "@inngest/agent-kit";
 import { z } from "zod";
 
-import { sbx } from "@acme/e2b/config";
 import { getSandbox } from "@acme/e2b/utils";
 
 function normalizeRelativePath(inputPath: string): string {
@@ -35,7 +34,11 @@ export const createOrUpdateFileTool = createTool({
 				content: z.string().optional(),
 			})
 			.parse(input);
-		const sandboxId = (network as any)?.state?.data?.sandboxId ?? sbx.sandboxId;
+		const sandboxId = (network as any)?.state?.data?.sandboxId;
+		if (!sandboxId) {
+			return "Error: No sandbox available. The development environment may not be ready yet.";
+		}
+
 		const files: FileItem[] = (params.files?.length)
 			? params.files
 			: (params.path && typeof params.content === "string")
@@ -65,7 +68,7 @@ export const createOrUpdateFileTool = createTool({
 
 				return updatedFiles;
 			} catch (error) {
-				return "Error: " + (error as Error).message;
+				return "Error: " + (error instanceof Error ? error.message : error);
 			}
 		});
 

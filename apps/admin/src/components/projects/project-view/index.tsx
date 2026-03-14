@@ -12,6 +12,7 @@ import {
 } from "@acme/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@acme/ui/tabs";
 
+import { ErrorNotificationContainer } from "../error-notification-container";
 import MessageContainer from "../messages-container";
 import { FileExplorer } from "./file-explorer";
 import FragmentWeb from "./fragment-web";
@@ -27,6 +28,7 @@ function ProjectView({ projectId }: Props) {
 
   return (
     <div className="h-screen">
+      <ErrorNotificationContainer projectId={projectId} />
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel
           defaultSize={35}
