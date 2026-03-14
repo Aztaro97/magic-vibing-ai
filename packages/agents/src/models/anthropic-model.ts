@@ -1,4 +1,4 @@
-import { anthropic } from "@inngest/agent-kit";
+import { anthropic, gemini } from "@inngest/agent-kit";
 
 import { env } from "../../env";
 
@@ -13,5 +13,12 @@ export function createAnthropicModel(modelName: string) {
 		model: modelName,
 		defaultParameters: { temperature: 0.1, max_tokens: 4096 },
 		apiKey: env.ANTHROPIC_API_KEY,
+	});
+}
+
+export function createGeminiModel(modelName: string) {
+	return gemini({
+		model: modelName,
+		apiKey: env.GEMINI_API_KEY,
 	});
 }

@@ -32,6 +32,6 @@
   },
   "prettier": "@acme/prettier-config",
   "dependencies": {
-    "@inngest/agent-kit": "^0.9.0"
+    "@inngest/agent-kit": "^0.13.2"
   }
 }

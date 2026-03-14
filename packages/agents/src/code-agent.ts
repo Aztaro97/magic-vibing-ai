@@ -1,7 +1,7 @@
 import { createAgent } from "@inngest/agent-kit";
 
 import { LLM_MODELS } from "./constants";
-import { anthropicModel, createAnthropicModel } from "./models/anthropic-model";
+import { anthropicModel, createAnthropicModel, createGeminiModel } from "./models/anthropic-model";
 import { createOpenAIModel } from "./models/open-ai-model";
 import { CODE_AGENT_PROMPT } from "./promps/code-agent-prompt";
 import { createOrUpdateFileTool } from "./tools/create-or-update-file";
@@ -38,6 +38,9 @@ export function getDynamicModel(modelName: string) {
 
 		case "anthropic":
 			return createAnthropicModel(modelName);
+
+		case "gemini":
+			return createGeminiModel(modelName);
 
 		default:
 			throw new Error(`Unsupported LLM provider: ${model?.provider}`);

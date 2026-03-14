@@ -4,17 +4,17 @@ An AI-powered coding assistant platform with a Next.js admin dashboard and React
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Monorepo** | Turborepo + pnpm workspaces |
+| Layer         | Technology                            |
+| ------------- | ------------------------------------- |
+| **Monorepo**  | Turborepo + pnpm workspaces           |
 | **Web Admin** | Next.js 15, React 19, Tailwind CSS v4 |
-| **Mobile** | React Native, Expo SDK 53, NativeWind |
-| **API** | tRPC v11 (type-safe client/server) |
-| **Database** | PostgreSQL (Supabase) + Drizzle ORM |
-| **Auth** | Better Auth with OAuth support |
-| **AI** | Claude/OpenAI integration |
-| **Sandboxes** | E2B for secure code execution |
-| **UI** | shadcn/ui components |
+| **Mobile**    | React Native, Expo SDK 53, NativeWind |
+| **API**       | tRPC v11 (type-safe client/server)    |
+| **Database**  | PostgreSQL (Supabase) + Drizzle ORM   |
+| **Auth**      | Better Auth with OAuth support        |
+| **AI**        | Claude/OpenAI integration             |
+| **Sandboxes** | E2B for secure code execution         |
+| **UI**        | shadcn/ui components                  |
 
 ## Project Structure
 
@@ -61,9 +61,11 @@ cp .env.example .env
 ```
 
 Required environment variables:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `AUTH_SECRET` - Authentication secret key
 - `ANTHROPIC_API_KEY` - Claude API key (optional)
+- `GEMINI_API_KEY` - Gemini API key (optional)
 - `OPENAI_API_KEY` - OpenAI API key (optional)
 - `E2B_API_KEY` - E2B sandbox API key (optional)
 
@@ -90,58 +92,58 @@ pnpm -F @acme/mobile dev
 
 ### Development
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start all apps in dev mode |
-| `pnpm dev:next` | Start Next.js admin only |
-| `pnpm -F @acme/mobile dev` | Start mobile app |
-| `pnpm -F @acme/mobile ios` | Run on iOS simulator |
-| `pnpm -F @acme/mobile android` | Run on Android emulator |
+| Command                        | Description                |
+| ------------------------------ | -------------------------- |
+| `pnpm dev`                     | Start all apps in dev mode |
+| `pnpm dev:next`                | Start Next.js admin only   |
+| `pnpm -F @acme/mobile dev`     | Start mobile app           |
+| `pnpm -F @acme/mobile ios`     | Run on iOS simulator       |
+| `pnpm -F @acme/mobile android` | Run on Android emulator    |
 
 ### Database
 
-| Command | Description |
-|---------|-------------|
-| `pnpm db:push` | Push schema to database |
-| `pnpm db:studio` | Open Drizzle Studio |
-| `pnpm db:generate` | Generate migrations |
+| Command            | Description             |
+| ------------------ | ----------------------- |
+| `pnpm db:push`     | Push schema to database |
+| `pnpm db:studio`   | Open Drizzle Studio     |
+| `pnpm db:generate` | Generate migrations     |
 
 ### Build & Quality
 
-| Command | Description |
-|---------|-------------|
-| `pnpm build` | Build all packages |
-| `pnpm lint` | Lint all packages |
-| `pnpm lint:fix` | Auto-fix lint issues |
-| `pnpm format` | Format with Prettier |
-| `pnpm typecheck` | Run type checking |
+| Command          | Description          |
+| ---------------- | -------------------- |
+| `pnpm build`     | Build all packages   |
+| `pnpm lint`      | Lint all packages    |
+| `pnpm lint:fix`  | Auto-fix lint issues |
+| `pnpm format`    | Format with Prettier |
+| `pnpm typecheck` | Run type checking    |
 
 ### Testing
 
-| Command | Description |
-|---------|-------------|
-| `pnpm -F @acme/mobile test` | Run mobile unit tests |
+| Command                         | Description                |
+| ------------------------------- | -------------------------- |
+| `pnpm -F @acme/mobile test`     | Run mobile unit tests      |
 | `pnpm -F @acme/mobile e2e-test` | Run E2E tests (Playwright) |
 
 ### E2B Templates
 
-| Command | Description |
-|---------|-------------|
-| `pnpm template:build:nextjs` | Build Next.js sandbox |
-| `pnpm template:build:expo` | Build Expo sandbox |
+| Command                        | Description              |
+| ------------------------------ | ------------------------ |
+| `pnpm template:build:nextjs`   | Build Next.js sandbox    |
+| `pnpm template:build:expo`     | Build Expo sandbox       |
 | `pnpm template:publish:nextjs` | Publish Next.js template |
 
 ## Database Schema
 
 Key tables:
 
-| Table | Purpose |
-|-------|---------|
-| `user` | User authentication data |
-| `project` | User projects |
-| `message` | Chat messages (USER/ASSISTANT) |
+| Table      | Purpose                          |
+| ---------- | -------------------------------- |
+| `user`     | User authentication data         |
+| `project`  | User projects                    |
+| `message`  | Chat messages (USER/ASSISTANT)   |
 | `fragment` | Code fragments with sandbox URLs |
-| `llm_key` | API keys for Claude/OpenAI |
+| `llm_key`  | API keys for Claude/OpenAI       |
 
 ## Adding Components
 
