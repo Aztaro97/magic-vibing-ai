@@ -97,9 +97,16 @@ export default function MessageContainer({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="pt-2 pr-1">
+        <div className="py-3 pr-1">
+          {messages.length === 0 && !showStreamingUI && !showFallbackLoading && (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <p className="text-muted-foreground text-sm">
+                Start a conversation to build something
+              </p>
+            </div>
+          )}
+
           {messages.map((message) => {
-            // Skip rendering the streaming message from DB if we're showing it in streaming UI
             if (streaming.isStreaming && message.id === streaming.messageId) {
               return null;
             }
@@ -118,7 +125,6 @@ export default function MessageContainer({
             );
           })}
 
-          {/* Show streaming message with real-time updates */}
           {showStreamingUI && (
             <StreamingMessage
               status={streaming.status}
@@ -128,14 +134,13 @@ export default function MessageContainer({
             />
           )}
 
-          {/* Fallback loading for when Pusher hasn't kicked in yet */}
           {showFallbackLoading && <MessageLoading />}
 
           <div ref={bottomRef} />
         </div>
       </div>
-      <div className="relative p-3 pt-1">
-        <div className="to-background pointer-events-none absolute -top-6 right-0 left-0 h-6 bg-gradient-to-b from-transparent" />
+      <div className="relative px-3 pb-3 pt-1">
+        <div className="to-background pointer-events-none absolute -top-8 right-0 left-0 h-8 bg-gradient-to-b from-transparent" />
         <MessageForm projectId={projectId} />
       </div>
     </div>

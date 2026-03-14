@@ -30,7 +30,6 @@ const formSchema = z.object({
 function ProjectForm() {
   const router = useRouter();
   const trpc = useTRPC();
-
   const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -53,11 +52,10 @@ function ProjectForm() {
     }),
   );
 
-  const onSubmit = async (vlaues: z.infer<typeof formSchema>) => {
-    console.log("Submitting project: " + vlaues.value);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     createProject.mutate({
-      value: vlaues.value,
-      model: vlaues.model,
+      value: values.value,
+      model: values.model,
     });
   };
 
@@ -75,73 +73,87 @@ function ProjectForm() {
 
   return (
     <Form {...form}>
-      <section className="space-y-6">
+      <section className="space-y-5">
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className={cn(
-            "bg-sidebar dark:bg-sidebar relative rounded-xl border p-4 pt-1 transition-all",
-            isFocused && "shadow-xs",
+            "bg-card/80 relative overflow-hidden rounded-2xl border backdrop-blur-sm transition-all duration-200",
+            isFocused
+              ? "border-amber-500/30 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20"
+              : "border-border/60 shadow-sm",
           )}
         >
-          <FormField
-            control={form.control}
-            name="value"
-            render={({ field }) => (
-              <TextareaAutosize
-                {...field}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                disabled={isPending}
-                minRows={2}
-                maxRows={8}
-                className="w-full resize-none border-none bg-transparent pt-4 outline-none"
-                placeholder="What would you like to build?"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    form.handleSubmit(onSubmit)(e);
-                  }
+          <div className="p-4 pb-0">
+            <FormField
+              control={form.control}
+              name="value"
+              render={({ field }) => (
+                <TextareaAutosize
+                  {...field}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  disabled={isPending}
+                  minRows={3}
+                  maxRows={8}
+                  className="placeholder:text-muted-foreground/60 w-full resize-none border-none bg-transparent text-[15px] leading-relaxed outline-none"
+                  placeholder="Describe what you want to build..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      form.handleSubmit(onSubmit)(e);
+                    }
+                  }}
+                />
+              )}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-2 p-3 pt-2">
+            <div className="flex items-center gap-1">
+              <ModelSelectForm
+                value={form.watch("model")}
+                onChange={(model) => {
+                  form.setValue("model" as any, model as any, {
+                    shouldDirty: true,
+                  });
                 }}
               />
-            )}
-          />
-
-          <div className="flex items-end justify-between gap-x-2 pt-2">
-            <ModelSelectForm
-              value={form.watch("model")}
-              onChange={(model) => {
-                console.log("Model changed: " + model);
-                form.setValue("model" as any, model as any, {
-                  shouldDirty: true,
-                });
-              }}
-            />
+            </div>
             <Button
               disabled={isButtonDisabled}
+              size="icon"
               className={cn(
-                "size-8 rounded-full",
-                isButtonDisabled && "bg-muted-foreground border",
+                "h-8 w-8 rounded-lg transition-all",
+                isButtonDisabled
+                  ? "bg-muted text-muted-foreground"
+                  : "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-sm hover:from-amber-600 hover:to-orange-700",
               )}
             >
               {isPending ? (
                 <Loader2Icon className="size-4 animate-spin" />
               ) : (
-                <ArrowUpIcon />
+                <ArrowUpIcon className="size-4" />
               )}
             </Button>
           </div>
         </form>
-        <div className="hidden max-w-3xl flex-wrap justify-center gap-2 md:flex">
+
+        {/* Template suggestions */}
+        <div className="hidden flex-wrap justify-center gap-2 md:flex">
           {PROJECT_TEMPLATES.map((template) => (
-            <Button
+            <button
               key={template.title}
-              variant="outline"
-              size="sm"
-              className="dark:bg-sidebar bg-white"
+              type="button"
+              className={cn(
+                "text-muted-foreground hover:text-foreground hover:bg-muted/80",
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs",
+                "transition-all duration-150 hover:shadow-sm",
+              )}
               onClick={() => onSelect(template.prompt)}
             >
-              {template.emoji} {template.title}
-            </Button>
+              <span>{template.emoji}</span>
+              <span>{template.title}</span>
+            </button>
           ))}
         </div>
       </section>

@@ -51,17 +51,15 @@ function MessageForm({ projectId }: Props) {
     }),
   );
 
-  const onSubmit = async (vlaues: z.infer<typeof formSchema>) => {
-    console.log(vlaues);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     await createMessage.mutateAsync({
-      value: vlaues.value,
+      value: values.value,
       projectId,
-      model: vlaues.model,
+      model: values.model,
     });
   };
 
   const [isFocused, setIsFocused] = useState(false);
-  const showUsage = false;
   const isPending = createMessage.isPending;
   const isButtonDisabled = isPending || !form.formState.isValid;
 
@@ -70,35 +68,38 @@ function MessageForm({ projectId }: Props) {
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn(
-          "bg-sidebar dark:bg-sidebar relative rounded-xl border p-4 pt-1 transition-all",
-          isFocused && "shadow-xs",
-          showUsage && "rounded-t-none",
+          "bg-card/80 relative rounded-xl border backdrop-blur-sm transition-all duration-200",
+          isFocused
+            ? "border-amber-500/30 ring-1 ring-amber-500/20"
+            : "border-border/60",
         )}
       >
-        <FormField
-          control={form.control}
-          name="value"
-          render={({ field }) => (
-            <TextareaAutosize
-              {...field}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              disabled={isPending}
-              minRows={2}
-              maxRows={8}
-              className="w-full resize-none border-none bg-transparent pt-4 outline-none"
-              placeholder="What would you like to build?"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                  e.preventDefault();
-                  form.handleSubmit(onSubmit)(e);
-                }
-              }}
-            />
-          )}
-        />
+        <div className="px-3 pt-3 pb-0">
+          <FormField
+            control={form.control}
+            name="value"
+            render={({ field }) => (
+              <TextareaAutosize
+                {...field}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                disabled={isPending}
+                minRows={1}
+                maxRows={6}
+                className="placeholder:text-muted-foreground/60 w-full resize-none border-none bg-transparent text-sm leading-relaxed outline-none"
+                placeholder="Ask VibeCoding to build something..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    form.handleSubmit(onSubmit)(e);
+                  }
+                }}
+              />
+            )}
+          />
+        </div>
 
-        <div className="flex items-end justify-between gap-x-2 pt-2">
+        <div className="flex items-center justify-between gap-2 px-2 py-2">
           <ModelSelectForm
             value={form.watch("model")}
             onChange={(model) => {
@@ -109,15 +110,18 @@ function MessageForm({ projectId }: Props) {
           />
           <Button
             disabled={isButtonDisabled}
+            size="icon"
             className={cn(
-              "size-8 rounded-full",
-              isButtonDisabled && "bg-muted-foreground border",
+              "h-7 w-7 rounded-lg transition-all",
+              isButtonDisabled
+                ? "bg-muted text-muted-foreground"
+                : "bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:from-amber-600 hover:to-orange-700",
             )}
           >
             {isPending ? (
-              <Loader2Icon className="size-4 animate-spin" />
+              <Loader2Icon className="size-3.5 animate-spin" />
             ) : (
-              <ArrowUpIcon />
+              <ArrowUpIcon className="size-3.5" />
             )}
           </Button>
         </div>

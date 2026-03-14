@@ -1,54 +1,48 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-const ShimmerMessages = () => {
-  const messages = [
-    "Thinking through logic...",
-    "Loading your workspace...",
-    "Analyzing your request...",
-    "Setting things up...",
-    "Structuring the code...",
-    "Wiring everything together...",
-    "Refining the output...",
-    "Making things efficient...",
-    "Putting on the final layer...",
-    "Almost done, hang tight...",
-  ];
+const MESSAGES = [
+  "Analyzing your request...",
+  "Setting things up...",
+  "Thinking through logic...",
+  "Structuring the code...",
+  "Wiring everything together...",
+  "Almost there...",
+];
 
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+function MessageLoading() {
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentMessageIndex((prev) => (prev + 1) % messages.length);
-    }, 2000);
-
+      setIndex((prev) => (prev + 1) % MESSAGES.length);
+    }, 2500);
     return () => clearInterval(interval);
-  }, [messages.length]);
+  }, []);
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-muted-foreground animate-pulse text-base">
-        {messages[currentMessageIndex]}
-      </span>
-    </div>
-  );
-};
-
-function MessageLoading() {
-  return (
-    <div className="group flex flex-col px-2 pb-4">
-      <div className="mb-2 flex items-center gap-2 pl-2">
-        <Image
-          src="/logo.svg"
-          alt="Blitz"
-          width={18}
-          height={18}
-          className="shrink-0"
-        />
-        <span className="text-sm font-medium">Blitz</span>
+    <div className="flex flex-col px-2 pb-4">
+      <div className="mb-1.5 flex items-center gap-2 pl-2">
+        <div className="flex h-5 w-5 items-center justify-center">
+          <Image
+            src="/logo.svg"
+            alt="VibeCoding"
+            width={16}
+            height={16}
+            className="shrink-0"
+          />
+        </div>
+        <span className="text-sm font-medium">VibeCoding</span>
       </div>
-      <div className="flex flex-col gap-y-4 pl-8.5">
-        <ShimmerMessages />
+      <div className="flex items-center gap-2 pl-9">
+        <div className="flex items-center gap-1">
+          <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-500/60 [animation-delay:-0.3s]" />
+          <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-500/60 [animation-delay:-0.15s]" />
+          <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-500/60" />
+        </div>
+        <span className="text-muted-foreground animate-pulse text-xs">
+          {MESSAGES[index]}
+        </span>
       </div>
     </div>
   );

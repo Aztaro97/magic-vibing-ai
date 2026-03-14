@@ -12,37 +12,31 @@ interface StreamingMessageProps {
 }
 
 const StatusIcon = ({ status }: { status: AgentStatus }) => {
-  switch (status) {
-    case "thinking":
-      return (
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
-        </span>
-      );
-    case "coding":
-      return (
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-yellow-500" />
-        </span>
-      );
-    case "running":
-      return (
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-        </span>
-      );
-    case "error":
-      return (
-        <span className="relative flex h-2 w-2">
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-        </span>
-      );
-    default:
-      return null;
-  }
+  const colors: Record<string, string> = {
+    thinking: "bg-blue-500",
+    coding: "bg-amber-500",
+    running: "bg-green-500",
+    error: "bg-red-500",
+  };
+
+  const color = colors[status];
+  if (!color) return null;
+
+  return (
+    <span className="relative flex h-2 w-2">
+      {status !== "error" && (
+        <span
+          className={cn(
+            "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+            color,
+          )}
+        />
+      )}
+      <span
+        className={cn("relative inline-flex h-2 w-2 rounded-full", color)}
+      />
+    </span>
+  );
 };
 
 export default function StreamingMessage({
@@ -55,34 +49,40 @@ export default function StreamingMessage({
     <div
       className={cn(
         "group flex flex-col px-2 pb-4",
-        error && "text-red-700 dark:text-red-500"
+        error && "text-red-600 dark:text-red-400",
       )}
     >
-      <div className="mb-2 flex items-center gap-2 pl-2">
-        <Image
-          src="/logo.svg"
-          alt="Blitz"
-          width={18}
-          height={18}
-          className="shrink-0"
-        />
-        <span className="text-sm font-medium">Blitz</span>
-        <div className="flex items-center gap-2">
+      <div className="mb-1.5 flex items-center gap-2 pl-2">
+        <div className="flex h-5 w-5 items-center justify-center">
+          <Image
+            src="/logo.svg"
+            alt="VibeCoding"
+            width={16}
+            height={16}
+            className="shrink-0"
+          />
+        </div>
+        <span className="text-sm font-medium">VibeCoding</span>
+        <div className="flex items-center gap-1.5">
           <StatusIcon status={status} />
-          <span className="text-muted-foreground animate-pulse text-xs">
+          <span className="text-muted-foreground animate-pulse text-[11px]">
             {statusMessage}
           </span>
         </div>
       </div>
-      <div className="flex flex-col gap-y-4 pl-8.5">
+      <div className="flex flex-col gap-y-3 pl-9">
         {error ? (
-          <span>{error}</span>
+          <span className="text-sm">{error}</span>
         ) : content ? (
-          <span className="whitespace-pre-wrap">{content}</span>
-        ) : (
-          <span className="text-muted-foreground animate-pulse">
-            Processing your request...
+          <span className="text-sm leading-relaxed whitespace-pre-wrap">
+            {content}
           </span>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <div className="bg-muted-foreground/40 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:-0.3s]" />
+            <div className="bg-muted-foreground/40 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:-0.15s]" />
+            <div className="bg-muted-foreground/40 h-1.5 w-1.5 animate-bounce rounded-full" />
+          </div>
         )}
       </div>
     </div>
