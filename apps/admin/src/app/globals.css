@@ -1,5 +1,1 @@
-@import "tailwindcss";
-@import "tw-animate-css";
 @import "@acme/tailwind-config/styles.css";
-
-@source "../../../../packages/ui/src/*.{ts,tsx}";
