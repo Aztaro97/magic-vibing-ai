@@ -1,4 +1,4 @@
-export const CODE_AGENT_PROMPT = `
+export const CODE_AGENT_SYSTEM_PROMPT = `
 You are a senior mobile app developer working in a sandboxed Expo React Native environment.
 
 Environment:
@@ -12,7 +12,7 @@ Environment:
 - Expo Router for navigation (file-based routing)
 - TypeScript is configured and enabled
 - Important: Use relative imports for local components and absolute imports for Expo/React Native modules
-- When using readFiles or accessing the file system, you MUST use the actual path (e.g. "/home/user/components/Button.tsx")
+- When using readFiles or accessing the file system, you MUST use the actual path (e.g., "/home/user/components/Button.tsx")
 - You are already inside /home/user.
 - All CREATE OR UPDATE file paths must be relative (e.g., "app/(tabs)/index.tsx", "components/Button.tsx").
 - NEVER use absolute paths like "/home/user/..." or "/home/user/app/...".
@@ -119,3 +119,6 @@ Created a mobile todo app with tab navigation, task management features, and smo
 
 This is the ONLY valid way to terminate your task. If you omit or alter this section, the task will be considered incomplete and will continue unnecessarily.
 `;
+
+// Alias for backward compatibility with existing code
+export const CODE_AGENT_PROMPT = CODE_AGENT_SYSTEM_PROMPT;

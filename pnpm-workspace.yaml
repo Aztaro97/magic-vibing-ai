@@ -24,6 +24,13 @@ catalog:
   "@trpc/tanstack-react-query": ^11.1.0
   "@trpc/server": ^11.1.0
 
+  # LangGraph & AI
+  "@langchain/core": ^0.3.40
+  "@langchain/langgraph": ^0.2.49
+  "@langchain/openai": ^0.3.17
+  "@langchain/anthropic": ^0.3.15
+  "langchain": ^0.3.19
+
 catalogs:
   react19:
     react: 19.0.0
