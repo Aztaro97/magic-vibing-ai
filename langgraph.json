@@ -1,7 +1,7 @@
 {
   "dockerfile_lines": ["COPY package.json ./"],
   "graphs": {
-    "agent": "./packages/agents/src/grapphs/code-agent-graph.ts:graph"
+    "agent": "./packages/agents/src/graphs/code-agent-graph.ts:graph"
   },
   "node_version": "20",
   "env": ".env",

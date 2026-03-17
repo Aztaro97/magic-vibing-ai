@@ -14,16 +14,16 @@ import type { CodeAgentState } from "@acme/validators";
 import { getCheckpointer } from "../checkpointer.js";
 import { runAgentNetworkNode } from "../nodes/agent-network.js";
 import {
-  chooseModelNode,
-  getPreviousMessagesNode,
-  getSandboxUrlNode,
-  handleErrorNode,
-  initializeMessageNode,
-  notifyErrorNode,
-  notifyStatusNode,
-  saveErrorNode,
-  saveResultNode,
-  setupSandboxNode,
+	chooseModelNode,
+	getPreviousMessagesNode,
+	getSandboxUrlNode,
+	handleErrorNode,
+	initializeMessageNode,
+	notifyErrorNode,
+	notifyStatusNode,
+	saveErrorNode,
+	saveResultNode,
+	setupSandboxNode,
 } from "../nodes/index.js";
 
 // ============================================================================
@@ -35,58 +35,58 @@ import {
  * Using LangGraph's Annotation API for type-safe state management
  */
 const CodeAgentAnnotation = Annotation.Root({
-  // Core identifiers
-  runId: Annotation<string>,
-  projectId: Annotation<string>,
-  userId: Annotation<string>,
-  messageId: Annotation<string | undefined>,
+	// Core identifiers
+	runId: Annotation<string>,
+	projectId: Annotation<string>,
+	userId: Annotation<string>,
+	messageId: Annotation<string | undefined>,
 
-  // Execution tracking
-  currentStep: Annotation<string>,
-  completedSteps: Annotation<string[]>,
+	// Execution tracking
+	currentStep: Annotation<string>,
+	completedSteps: Annotation<string[]>,
 
-  // Input
-  userPrompt: Annotation<string>,
+	// Input
+	userPrompt: Annotation<string>,
 
-  // Context
-  messages: Annotation<unknown[]>,
-  previousMessages: Annotation<unknown[]>,
+	// Context
+	messages: Annotation<unknown[]>,
+	previousMessages: Annotation<unknown[]>,
 
-  // Agent workflow
-  agentIterations: Annotation<number>,
-  maxIterations: Annotation<number>,
-  summary: Annotation<string | undefined>,
+	// Agent workflow
+	agentIterations: Annotation<number>,
+	maxIterations: Annotation<number>,
+	summary: Annotation<string | undefined>,
 
-  // Sandboxing
-  sandboxId: Annotation<string | undefined>,
-  sandboxUrl: Annotation<string | undefined>,
-  template: Annotation<string | undefined>,
+	// Sandboxing
+	sandboxId: Annotation<string | undefined>,
+	sandboxUrl: Annotation<string | undefined>,
+	template: Annotation<string | undefined>,
 
-  // Model
-  modelProvider: Annotation<string>,
-  model: Annotation<string | undefined>,
+	// Model
+	modelProvider: Annotation<string>,
+	model: Annotation<string | undefined>,
 
-  // Results
-  generatedCode: Annotation<string | undefined>,
-  files: Annotation<Record<string, string> | undefined>,
+	// Results
+	generatedCode: Annotation<string | undefined>,
+	files: Annotation<Record<string, string> | undefined>,
 
-  // Tools
-  toolsUsed: Annotation<unknown[]>,
+	// Tools
+	toolsUsed: Annotation<unknown[]>,
 
-  // Streaming
-  streamStatus: Annotation<string | undefined>,
-  isStreaming: Annotation<boolean>,
+	// Streaming
+	streamStatus: Annotation<string | undefined>,
+	isStreaming: Annotation<boolean>,
 
-  // Error handling - use errorMessage to match schema
-  errorMessage: Annotation<string | undefined>,
-  errorType: Annotation<string | undefined>,
+	// Error handling - use errorMessage to match schema
+	errorMessage: Annotation<string | undefined>,
+	errorType: Annotation<string | undefined>,
 
-  // Timestamps
-  createdAt: Annotation<Date>,
-  updatedAt: Annotation<Date>,
+	// Timestamps
+	createdAt: Annotation<Date>,
+	updatedAt: Annotation<Date>,
 
-  // Stream events
-  streamEvents: Annotation<unknown[]>,
+	// Stream events
+	streamEvents: Annotation<unknown[]>,
 });
 
 // ============================================================================
@@ -110,106 +110,106 @@ const CodeAgentAnnotation = Annotation.Root({
  * 11. Save result
  */
 export function createCodeAgentGraph() {
-  const graph = new StateGraph(CodeAgentAnnotation);
+	const graph = new StateGraph(CodeAgentAnnotation);
 
-  // Step 1: Initialize message in DB
-  graph.addNode("initialize_message", initializeMessageNode);
+	// Step 1: Initialize message in DB
+	graph.addNode("initialize_message", initializeMessageNode);
 
-  // Step 2: Notify user that agent is thinking
-  graph.addNode("notify_thinking", notifyStatusNode("thinking"));
+	// Step 2: Notify user that agent is thinking
+	graph.addNode("notify_thinking", notifyStatusNode("thinking"));
 
-  // Step 3: Setup E2B sandbox
-  graph.addNode("setup_sandbox", setupSandboxNode);
+	// Step 3: Setup E2B sandbox
+	graph.addNode("setup_sandbox", setupSandboxNode);
 
-  // Step 4: Notify setup complete
-  graph.addNode("notify_setup", notifyStatusNode("setup"));
+	// Step 4: Notify setup complete
+	graph.addNode("notify_setup", notifyStatusNode("setup"));
 
-  // Step 5: Load chat history
-  graph.addNode("get_history", getPreviousMessagesNode);
+	// Step 5: Load chat history
+	graph.addNode("get_history", getPreviousMessagesNode);
 
-  // Step 6: Choose AI model
-  graph.addNode("choose_model", chooseModelNode);
+	// Step 6: Choose AI model
+	graph.addNode("choose_model", chooseModelNode);
 
-  // Step 7: Notify coding started
-  graph.addNode("notify_coding", notifyStatusNode("coding"));
+	// Step 7: Notify coding started
+	graph.addNode("notify_coding", notifyStatusNode("coding"));
 
-  // Step 8: Run agent network (core AI logic)
-  graph.addNode("run_agent_network", runAgentNetworkNode);
+	// Step 8: Run agent network (core AI logic)
+	graph.addNode("run_agent_network", runAgentNetworkNode);
 
-  // Step 9: Notify running
-  graph.addNode("notify_running", notifyStatusNode("running"));
+	// Step 9: Notify running
+	graph.addNode("notify_running", notifyStatusNode("running"));
 
-  // Step 10: Get sandbox URL for preview
-  graph.addNode("get_sandbox_url", getSandboxUrlNode);
+	// Step 10: Get sandbox URL for preview
+	graph.addNode("get_sandbox_url", getSandboxUrlNode);
 
-  // Step 11: Save result to DB
-  graph.addNode("save_result", saveResultNode);
+	// Step 11: Save result to DB
+	graph.addNode("save_result", saveResultNode);
 
-  // Step 12: Error handling nodes
-  graph.addNode("handle_error", handleErrorNode);
-  graph.addNode("save_error", saveErrorNode);
-  graph.addNode("notify_error", notifyErrorNode);
+	// Step 12: Error handling nodes
+	graph.addNode("handle_error", handleErrorNode);
+	graph.addNode("save_error", saveErrorNode);
+	graph.addNode("notify_error", notifyErrorNode);
 
-  // ============================================================================
-  // Define edges (workflow with error handling)
-  // ============================================================================
+	// ============================================================================
+	// Define edges (workflow with error handling)
+	// ============================================================================
 
-  // Helper function to check if state has error
-  const hasError = (state: typeof CodeAgentAnnotation.State) =>
-    Boolean(state.errorMessage || state.errorType);
+	// Helper function to check if state has error
+	const hasError = (state: typeof CodeAgentAnnotation.State) =>
+		Boolean(state.errorMessage || state.errorType);
 
-  // Start -> Initialize message
-  graph.addEdge("__start__" as any, "initialize_message" as any);
+	// Start -> Initialize message
+	graph.addEdge("__start__" as any, "initialize_message" as any);
 
-  // Initialize -> Notify thinking (with error check)
-  graph.addConditionalEdges("initialize_message" as any, (state) =>
-    hasError(state) ? "handle_error" : "notify_thinking",
-  );
+	// Initialize -> Notify thinking (with error check)
+	graph.addConditionalEdges("initialize_message" as any, (state) =>
+		hasError(state) ? "handle_error" : "notify_thinking",
+	);
 
-  // Notify thinking -> Setup sandbox
-  graph.addEdge("notify_thinking" as any, "setup_sandbox" as any);
+	// Notify thinking -> Setup sandbox
+	graph.addEdge("notify_thinking" as any, "setup_sandbox" as any);
 
-  // Setup -> Notify setup (with error check)
-  graph.addConditionalEdges("setup_sandbox" as any, (state) =>
-    hasError(state) ? "handle_error" : "notify_setup",
-  );
+	// Setup -> Notify setup (with error check)
+	graph.addConditionalEdges("setup_sandbox" as any, (state) =>
+		hasError(state) ? "handle_error" : "notify_setup",
+	);
 
-  // Notify setup -> Get history
-  graph.addEdge("notify_setup" as any, "get_history" as any);
+	// Notify setup -> Get history
+	graph.addEdge("notify_setup" as any, "get_history" as any);
 
-  // Get history -> Choose model
-  graph.addEdge("get_history" as any, "choose_model" as any);
+	// Get history -> Choose model
+	graph.addEdge("get_history" as any, "choose_model" as any);
 
-  // Choose model -> Notify coding
-  graph.addEdge("choose_model" as any, "notify_coding" as any);
+	// Choose model -> Notify coding
+	graph.addEdge("choose_model" as any, "notify_coding" as any);
 
-  // Notify coding -> Run agent network (main AI work)
-  graph.addEdge("notify_coding" as any, "run_agent_network" as any);
+	// Notify coding -> Run agent network (main AI work)
+	graph.addEdge("notify_coding" as any, "run_agent_network" as any);
 
-  // Run agent -> Notify running (with error check)
-  graph.addConditionalEdges("run_agent_network" as any, (state) =>
-    hasError(state) ? "handle_error" : "notify_running",
-  );
+	// Run agent -> Notify running (with error check)
+	graph.addConditionalEdges("run_agent_network" as any, (state) =>
+		hasError(state) ? "handle_error" : "notify_running",
+	);
 
-  // Notify running -> Get sandbox URL
-  graph.addEdge("notify_running" as any, "get_sandbox_url" as any);
+	// Notify running -> Get sandbox URL
+	graph.addEdge("notify_running" as any, "get_sandbox_url" as any);
 
-  // Get URL -> Save result (with error check)
-  graph.addConditionalEdges("get_sandbox_url" as any, (state) =>
-    hasError(state) ? "handle_error" : "save_result",
-  );
+	// Get URL -> Save result (with error check)
+	graph.addConditionalEdges("get_sandbox_url" as any, (state) =>
+		hasError(state) ? "handle_error" : "save_result",
+	);
 
-  // Save result -> End
-  graph.addEdge("save_result" as any, END);
+	// Save result -> End
+	graph.addEdge("save_result" as any, END);
 
-  // Error handler chain
-  graph.addEdge("handle_error" as any, "save_error" as any);
-  graph.addEdge("save_error" as any, "notify_error" as any);
-  graph.addEdge("notify_error" as any, END);
+	// Error handler chain
+	graph.addEdge("handle_error" as any, "save_error" as any);
+	graph.addEdge("save_error" as any, "notify_error" as any);
+	graph.addEdge("notify_error" as any, END);
 
-  // Compile with checkpointer for state persistence
-  const checkpointer = getCheckpointer();
-  return graph.compile({ checkpointer });
+	// Compile with checkpointer for state persistence
+	const checkpointer = getCheckpointer();
+	return graph.compile({ checkpointer });
 }
 
 // ============================================================================
@@ -222,10 +222,10 @@ let codeAgentGraph: ReturnType<typeof createCodeAgentGraph> | null = null;
  * Get or create the code agent graph instance
  */
 export function getCodeAgentGraph() {
-  if (!codeAgentGraph) {
-    codeAgentGraph = createCodeAgentGraph();
-  }
-  return codeAgentGraph;
+	if (!codeAgentGraph) {
+		codeAgentGraph = createCodeAgentGraph();
+	}
+	return codeAgentGraph;
 }
 
 // ============================================================================
@@ -239,26 +239,26 @@ export function getCodeAgentGraph() {
  * @returns Final state with generated code and sandbox URL
  */
 export async function runCodeAgentGraph(
-  input: Pick<CodeAgentState, "projectId" | "userId" | "runId" | "userPrompt"> &
-    Partial<Pick<CodeAgentState, "modelProvider" | "template">>,
+	input: Pick<CodeAgentState, "projectId" | "userId" | "runId" | "userPrompt"> &
+		Partial<Pick<CodeAgentState, "modelProvider" | "template">>,
 ) {
-  const graph = getCodeAgentGraph();
+	const graph = getCodeAgentGraph();
 
-  const result = await graph.invoke({
-    ...input,
-    currentStep: "init",
-    completedSteps: [],
-    agentIterations: 0,
-    isStreaming: true,
-    messages: [],
-    previousMessages: [],
-    toolsUsed: [],
-    streamEvents: [],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+	const result = await graph.invoke({
+		...input,
+		currentStep: "init",
+		completedSteps: [],
+		agentIterations: 0,
+		isStreaming: true,
+		messages: [],
+		previousMessages: [],
+		toolsUsed: [],
+		streamEvents: [],
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	});
 
-  return result;
+	return result;
 }
 
 // ============================================================================
@@ -272,29 +272,32 @@ export async function runCodeAgentGraph(
  * @yields State updates at each step
  */
 export async function* streamCodeAgentGraph(
-  input: Pick<CodeAgentState, "projectId" | "userId" | "runId" | "userPrompt"> &
-    Partial<Pick<CodeAgentState, "modelProvider" | "template">>,
+	input: Pick<CodeAgentState, "projectId" | "userId" | "runId" | "userPrompt"> &
+		Partial<Pick<CodeAgentState, "modelProvider" | "template">>,
 ) {
-  const graph = getCodeAgentGraph();
+	const graph = getCodeAgentGraph();
 
-  const stream = await graph.stream(
-    {
-      ...input,
-      currentStep: "init",
-      completedSteps: [],
-      agentIterations: 0,
-      isStreaming: true,
-      messages: [],
-      previousMessages: [],
-      toolsUsed: [],
-      streamEvents: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    { streamMode: "updates" },
-  );
+	const stream = await graph.stream(
+		{
+			...input,
+			currentStep: "init",
+			completedSteps: [],
+			agentIterations: 0,
+			isStreaming: true,
+			messages: [],
+			previousMessages: [],
+			toolsUsed: [],
+			streamEvents: [],
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		},
+		{ streamMode: "updates" },
+	);
 
-  for await (const update of stream) {
-    yield update;
-  }
+	for await (const update of stream) {
+		yield update;
+	}
 }
+
+// Export the compiled graph instance for LangGraph Studio/CLI
+export const graph = getCodeAgentGraph();
