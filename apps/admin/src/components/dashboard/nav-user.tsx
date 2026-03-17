@@ -71,7 +71,7 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="bg-amber-500/10 text-amber-600 rounded-lg text-xs font-medium dark:text-amber-400">
+                <AvatarFallback className="rounded-lg bg-amber-500/10 text-xs font-medium text-amber-600 dark:text-amber-400">
                   {user.name.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -96,7 +96,7 @@ export function NavUser({
               <div className="flex items-center gap-3 border-b p-3">
                 <Avatar className="h-9 w-9 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-amber-500/10 text-amber-600 rounded-lg text-xs font-medium dark:text-amber-400">
+                  <AvatarFallback className="rounded-lg bg-amber-500/10 text-xs font-medium text-amber-600 dark:text-amber-400">
                     {user.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -117,9 +117,7 @@ export function NavUser({
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() =>
-                    setTheme(theme === "dark" ? "light" : "dark")
-                  }
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 >
                   {theme === "dark" ? (
                     <SunIcon className="mr-2 h-4 w-4" />

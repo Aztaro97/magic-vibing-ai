@@ -18,6 +18,8 @@ const config = {
     "@acme/error-handler",
     "@acme/agent",
     "@acme/e2b",
+    "@acme/deep-agents",
+    "@acme/sandboxes",
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

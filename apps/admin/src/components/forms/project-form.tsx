@@ -79,7 +79,7 @@ function ProjectForm() {
           className={cn(
             "bg-card/80 relative overflow-hidden rounded-2xl border backdrop-blur-sm transition-all duration-200",
             isFocused
-              ? "border-amber-500/30 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20"
+              ? "border-amber-500/30 shadow-lg ring-1 shadow-amber-500/5 ring-amber-500/20"
               : "border-border/60 shadow-sm",
           )}
         >

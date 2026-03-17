@@ -84,7 +84,9 @@ function ProjectView({ projectId }: Props) {
               <ErrorFallback error={error} label="messages" />
             )}
           >
-            <Suspense fallback={<LoadingSkeleton label="Loading messages..." />}>
+            <Suspense
+              fallback={<LoadingSkeleton label="Loading messages..." />}
+            >
               <MessageContainer
                 projectId={projectId}
                 activeFragment={activeFragment}

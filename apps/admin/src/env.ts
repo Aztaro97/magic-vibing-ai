@@ -18,6 +18,7 @@ export const env = createEnv({
 	server: {
 		POSTGRES_URL: z.string().url(),
 		LANGCHAIN_API_KEY: z.string(),
+		INNGEST_SIGNING_KEY: z.string().optional(),
 	},
 
 	/**

@@ -27,7 +27,7 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@e2b/code-interpreter": "^1.5.1",
+    "@e2b/code-interpreter": "^2.3.3",
     "@t3-oss/env-nextjs": "^0.13.0"
   },
   "devDependencies": {

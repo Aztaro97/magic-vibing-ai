@@ -1,5 +1,6 @@
 import { cx } from "class-variance-authority";
 import { twMerge } from "tailwind-merge";
+
 import type { TreeItem } from "./types";
 
 const cn = (...inputs: Parameters<typeof cx>) => twMerge(cx(inputs));
@@ -21,8 +22,6 @@ export * from "./tooltip";
 export * from "./theme";
 export { cn };
 
-
-
 /**
  * Convert a record of files to a tree structure.
  * @param files - Record of file paths to content
@@ -33,65 +32,65 @@ export { cn };
  * Output: [["src", "Button.tsx"], "README.md"]
  */
 export function convertFilesToTreeItems(
-	files: Record<string, string>
+  files: Record<string, string>,
 ): TreeItem[] {
-	// Define proper type for tree structure
-	interface TreeNode {
-		[key: string]: TreeNode | null;
-	}
+  // Define proper type for tree structure
+  interface TreeNode {
+    [key: string]: TreeNode | null;
+  }
 
-	// Build a tree structure first
-	const tree: TreeNode = {};
+  // Build a tree structure first
+  const tree: TreeNode = {};
 
-	// Sort files to ensure consistent ordering
-	const sortedPaths = Object.keys(files).sort();
+  // Sort files to ensure consistent ordering
+  const sortedPaths = Object.keys(files).sort();
 
-	for (const filePath of sortedPaths) {
-		const parts = filePath.split("/");
-		let current = tree;
+  for (const filePath of sortedPaths) {
+    const parts = filePath.split("/");
+    let current = tree;
 
-		// Navigate/create the tree structure
-		for (let i = 0; i < parts.length - 1; i++) {
-			const part = parts[i] as string;
-			if (!current[part]) {
-				current[part] = {};
-			}
-			current = current[part] as TreeNode;
-		}
+    // Navigate/create the tree structure
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i] as string;
+      if (!current[part]) {
+        current[part] = {};
+      }
+      current = current[part] as TreeNode;
+    }
 
-		// Add the file (leaf node)
-		const fileName = parts[parts.length - 1] as string;
-		current[fileName] = null; // null indicates it's a file
-	}
+    // Add the file (leaf node)
+    const fileName = parts[parts.length - 1] as string;
+    current[fileName] = null; // null indicates it's a file
+  }
 
-	// Convert tree structure to TreeItem format
-	function convertNode(node: TreeNode, name?: string): TreeItem[] | TreeItem {
-		const entries = Object.entries(node);
+  // Convert tree structure to TreeItem format
+  function convertNode(node: TreeNode, name?: string): TreeItem[] | TreeItem {
+    const entries = Object.entries(node);
 
-		if (entries.length === 0) {
-			return name || "";
-		}
+    if (entries.length === 0) {
+      return name || "";
+    }
 
-		const children: TreeItem[] = [];
+    const children: TreeItem[] = [];
 
-		for (const [key, value] of entries) {
-			if (value === null) {
-				// It's a file
-				children.push(key);
-			} else {
-				// It's a folder
-				const subTree = convertNode(value, key);
-				if (Array.isArray(subTree)) {
-					children.push([key, ...subTree]);
-				} else {
-					children.push([key, subTree]);
-				}
-			}
-		}
+    for (const [key, value] of entries) {
+      if (value === null) {
+        // It's a file
+        children.push(key);
+      } else {
+        // It's a folder
+        const subTree = convertNode(value, key);
+        if (Array.isArray(subTree)) {
+          children.push([key, ...subTree]);
+        } else {
+          children.push([key, subTree]);
+        }
+      }
+    }
 
-		return children;
-	}
+    return children;
+  }
 
-	const result = convertNode(tree);
-	return Array.isArray(result) ? result : [result];
+  const result = convertNode(tree);
+  return Array.isArray(result) ? result : [result];
 }

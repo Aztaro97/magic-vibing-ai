@@ -1,11 +1,11 @@
-import { filterSensitiveData, matchesExpoError } from "../shared/patterns";
-import type { ErrorNotification } from "../shared/types";
-
 // ── Pusher integration ──────────────────────────────────────────────
 // We import from @acme/pusher at the server level. The error-handler
 // extends the existing channel convention with a dedicated error event.
 
 import { CHANNELS, getPusherServer } from "@acme/pusher/server";
+
+import type { ErrorNotification } from "../shared/types";
+import { filterSensitiveData, matchesExpoError } from "../shared/patterns";
 
 /**
  * Error-specific Pusher event name.
