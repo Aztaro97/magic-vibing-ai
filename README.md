@@ -68,6 +68,7 @@ Required environment variables:
 - `GEMINI_API_KEY` - Gemini API key (optional)
 - `OPENAI_API_KEY` - OpenAI API key (optional)
 - `E2B_API_KEY` - E2B sandbox API key (optional)
+- `DAYTONA_API_KEY` - Daytona API key (optional)
 
 ### 3. Setup Database
 
@@ -204,7 +205,7 @@ eas submit --platform ios --latest
 - **Type Safety**: Full end-to-end type safety via tRPC
 - **Edge Compatible**: Database client works on Vercel Edge
 - **Package Isolation**: `@acme/api` is dev-only in mobile app (no backend code leakage)
-- **AI Agents**: Orchestrated via `@acme/agents` package
+- **AI Agents**: Orchestrated via `@acme/agents` logic using LangGraph for stateful execution
 - **Code Execution**: Secure sandboxed execution via E2B
 
 ## Contributing

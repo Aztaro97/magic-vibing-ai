@@ -2,7 +2,6 @@
  * Hello World Graph
  *
  * Simple LangGraph StateGraph for testing the migration setup.
- * Replaces hello-word-fn.ts Inngest function.
  *
  * Migration: Phase 3 — Simplest graph for validation
  */

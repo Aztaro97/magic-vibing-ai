@@ -52,15 +52,15 @@ export function convertFilesToTreeItems(
 
 		// Navigate/create the tree structure
 		for (let i = 0; i < parts.length - 1; i++) {
-			const part = parts[i];
+			const part = parts[i] as string;
 			if (!current[part]) {
 				current[part] = {};
 			}
-			current = current[part];
+			current = current[part] as TreeNode;
 		}
 
 		// Add the file (leaf node)
-		const fileName = parts[parts.length - 1];
+		const fileName = parts[parts.length - 1] as string;
 		current[fileName] = null; // null indicates it's a file
 	}
 

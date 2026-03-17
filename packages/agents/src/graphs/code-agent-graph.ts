@@ -2,7 +2,6 @@
  * Code Agent Graph
  *
  * LangGraph StateGraph for code generation with E2B sandboxing.
- * Replaces code-agent-fn.ts Inngest function (376 lines).
  *
  * Migration: Phase 3 — Main graph with 14+ nodes
  */
