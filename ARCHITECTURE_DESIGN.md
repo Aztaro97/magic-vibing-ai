@@ -502,7 +502,7 @@ graph.addConditionalEdges("setupSandbox", (state) => {
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 
 const checkpointer = new PostgresSaver({
-  connectionString: process.env.DATABASE_URL!,
+  connectionString: process.env.POSTGRES_URL!,
 });
 
 const graph = codeAgentGraph.compile({ checkpointer });

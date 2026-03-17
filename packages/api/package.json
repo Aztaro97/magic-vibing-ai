@@ -24,6 +24,7 @@
     "@acme/db": "workspace:*",
     "@acme/pusher": "workspace:*",
     "@acme/validators": "workspace:*",
+	"@t3-oss/env-nextjs": "^0.13.0",
     "@trpc/server": "catalog:",
     "random-word-slugs": "^0.1.7",
     "superjson": "2.2.2",

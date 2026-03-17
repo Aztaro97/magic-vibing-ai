@@ -17,7 +17,7 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "generate": "pnpm with-env pnpm with-env pnpm -F @acme/auth generate --output ../db/src/auth-schema.ts",
-    "dev": "npx @langchain/langgraph-cli dev --port 2024 --config ../../langgraph.json",
+    "dev": "pnpm with-env npx @langchain/langgraph-cli dev --port 2024 --config ../../langgraph.json",
     "start": "node dist/index.js",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

@@ -1,11 +1,11 @@
 // LangGraph exports (migration targets)
-export * from "./checkpointer.js";
-export * from "./graphs/index.js";
-export * from "./nodes/index.js";
+export * from "./checkpointer";
+export * from "./graphs/index";
+export * from "./nodes/index";
 
 // Utilities
 export { getSandbox } from "@acme/e2b/utils";
-export * from "./utils.js";
+export * from "./utils";
 
 // Constants
-export * from "./constants/index.js";
+export * from "./constants/index";

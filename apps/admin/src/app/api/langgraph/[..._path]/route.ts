@@ -15,5 +15,5 @@ export const { GET, POST, PUT, PATCH, DELETE, OPTIONS, runtime } =
 				: LANGGRAPH_CLOUD_ENDPOINT, // default, if not defined it will attempt to read process.env.LANGGRAPH_API_URL
 		apiKey: env.LANGCHAIN_API_KEY, // default, if not defined it will attempt to read process.env.LANGSMITH_API_KEY
 		runtime: "edge", // default
-		// disableWarningLog: true,
+		disableWarningLog: true,
 	});

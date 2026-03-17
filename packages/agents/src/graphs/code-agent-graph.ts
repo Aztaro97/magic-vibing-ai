@@ -11,8 +11,8 @@ import { Annotation, END, StateGraph } from "@langchain/langgraph";
 
 import type { CodeAgentState } from "@acme/validators";
 
-import { getCheckpointer } from "../checkpointer.js";
-import { runAgentNetworkNode } from "../nodes/agent-network.js";
+import { getCheckpointer } from "../checkpointer";
+import { runAgentNetworkNode } from "../nodes/agent-network";
 import {
 	chooseModelNode,
 	getPreviousMessagesNode,
@@ -24,7 +24,7 @@ import {
 	saveErrorNode,
 	saveResultNode,
 	setupSandboxNode,
-} from "../nodes/index.js";
+} from "../nodes/index";
 
 // ============================================================================
 // State Annotation

@@ -62,7 +62,7 @@ cp .env.example .env
 
 Required environment variables:
 
-- `DATABASE_URL` - PostgreSQL connection string
+- `POSTGRES_URL` - PostgreSQL connection string
 - `AUTH_SECRET` - Authentication secret key
 - `ANTHROPIC_API_KEY` - Claude API key (optional)
 - `GEMINI_API_KEY` - Gemini API key (optional)

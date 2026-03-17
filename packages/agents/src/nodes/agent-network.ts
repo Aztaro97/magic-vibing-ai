@@ -17,9 +17,9 @@ import { ChatOpenAI } from "@langchain/openai";
 import { getSandbox } from "@acme/e2b";
 import type { CodeAgentState } from "@acme/validators";
 
-import { CODE_AGENT_SYSTEM_PROMPT } from "../promps/code-agent-prompt.js";
-import { createFileTool } from "../tools/file-tool.js";
-import { createTerminalTool } from "../tools/terminal-tool.js";
+import { CODE_AGENT_SYSTEM_PROMPT } from "../promps/code-agent-prompt";
+import { createFileTool } from "../tools/file-tool";
+import { createTerminalTool } from "../tools/terminal-tool";
 
 /**
  * Run the agent network node
