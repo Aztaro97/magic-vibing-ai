@@ -27,7 +27,7 @@
     "@auth/drizzle-adapter": "catalog:",
     "@t3-oss/env-nextjs": "^0.13.0",
     "better-auth": "^1.1.15-beta.7",
-    "next": "^15.2.3",
+    "next": "^16.1.6",
     "next-auth": "catalog:",
     "react": "catalog:react19",
     "react-dom": "catalog:react19",

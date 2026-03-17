@@ -51,6 +51,7 @@
     "AUTH_SECRET",
     "PORT",
     "E2B_API_KEY",
+	"DAYTONA_API_KEY",
     "ANTHROPIC_API_KEY",
     "OPENAI_API_KEY",
     "GEMINI_API_KEY",

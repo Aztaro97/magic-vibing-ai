@@ -17,6 +17,8 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "generate": "pnpm with-env pnpm with-env pnpm -F @acme/auth generate --output ../db/src/auth-schema.ts",
+    "dev": "pnpm with-env npx @langchain/langgraph-cli dev --port 2024 --config ../../langgraph.json",
+    "start": "node dist/index.js",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "with-env": "dotenv -e ../../.env --"
@@ -32,7 +34,17 @@
   },
   "prettier": "@acme/prettier-config",
   "dependencies": {
+    "@acme/db": "workspace:*",
+    "@acme/e2b": "workspace:*",
     "@acme/error-handler": "workspace:*",
-    "@inngest/agent-kit": "^0.13.2"
+    "@acme/pusher": "workspace:*",
+    "@acme/validators": "workspace:*",
+    "@langchain/anthropic": "catalog:",
+    "@langchain/core": "catalog:",
+    "@langchain/langgraph": "catalog:",
+    "@langchain/langgraph-checkpoint-postgres": "^0.0.4",
+    "@langchain/openai": "catalog:",
+    "langchain": "catalog:",
+    "zod": "catalog:"
   }
 }

@@ -7,6 +7,15 @@ export const env = createEnv({
 		ANTHROPIC_API_KEY: z.string().min(1),
 		OPENAI_API_KEY: z.string().min(1),
 		GEMINI_API_KEY: z.string().min(1),
+		POSTGRES_URL: z.string(),
+
+		LANGCHAIN_TRACING_V2: z.string().optional().default("true"),
+		LANGCHAIN_ENDPOINT: z
+			.string()
+			.optional()
+			.default("https://api.smith.langchain.com"),
+		LANGCHAIN_API_KEY: z.string().optional(),
+		LANGCHAIN_PROJECT: z.string().optional().default("vibecoding"),
 	},
 	client: {},
 	experimental__runtimeEnv: {},

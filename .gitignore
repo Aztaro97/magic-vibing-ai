@@ -54,7 +54,15 @@ dist/
 # turbo
 .turbo
 
+# Agents Skills
+.agents/
+.opencode/
+.claude/
+
+
 
 
 
 PRD.md
+# LangGraph API
+.langgraph_api

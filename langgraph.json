@@ -1,0 +1,9 @@
+{
+  "dockerfile_lines": ["COPY package.json ./"],
+  "graphs": {
+    "agent": "./packages/agents/src/graphs/code-agent-graph.ts:graph"
+  },
+  "node_version": "20",
+  "env": ".env",
+  "dependencies": ["."]
+}

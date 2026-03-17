@@ -1,23 +1,23 @@
-import { Fragment, useCallback, useMemo, useState } from "react";
 import { CopyCheckIcon, CopyIcon } from "lucide-react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { convertFilesToTreeItems } from "@acme/ui";
 import {
-  Breadcrumb,
-  BreadcrumbEllipsis,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+    Breadcrumb,
+    BreadcrumbEllipsis,
+    BreadcrumbItem,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@acme/ui/breadcrumb";
 import { Button } from "@acme/ui/button";
 import CodeView from "@acme/ui/code-view";
 import Hint from "@acme/ui/hint";
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
 } from "@acme/ui/resizable";
 import TreeView from "@acme/ui/tree-view";
 
@@ -95,7 +95,7 @@ export const FileExplorer = ({ files }: FileExplorerProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string | null>(() => {
     const filekeys = Object.keys(files);
-    return filekeys.length > 0 ? filekeys[0] : null;
+    return filekeys.length > 0 ? (filekeys[0] ?? null) : null;
   });
 
   const treeData = useMemo(() => {
@@ -112,8 +112,8 @@ export const FileExplorer = ({ files }: FileExplorerProps) => {
   );
 
   const handleCopy = useCallback(() => {
-    if (selectedFiles) {
-      navigator.clipboard.writeText(files[selectedFiles]);
+    if (selectedFiles && files[selectedFiles]) {
+      navigator.clipboard.writeText(files[selectedFiles] as string);
       toast.success("File path copied successfully!");
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
