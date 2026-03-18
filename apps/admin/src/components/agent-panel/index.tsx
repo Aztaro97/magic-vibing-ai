@@ -1,30 +1,34 @@
-
 "use client";
- 
+
 import type { Fragment } from "@acme/db";
 import type { AIMessage } from "@langchain/core/messages";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAgentStream } from "~/hooks/use-agent-stream";
 import { HITLCard } from "./hitl-card";
 import { MessageForm } from "./message-form";
 import { ToolCard } from "./tool-cards";
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 interface Props {
   projectId:         string;
   sessionId:         string;
   activeFragment:    Fragment | null;
   setActiveFragment: (f: Fragment | null) => void;
+  /** Present only on new-project creation — auto-sent once on mount */
+  initialPrompt?:    string;
+  /** Model selected in ProjectForm — pre-selected in the chat form */
+  initialModel?:     string;
 }
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Message bubble components
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 function UserBubble({ content }: { content: string }) {
   return (
     <div className="flex justify-end px-3 pb-4">
@@ -34,23 +38,20 @@ function UserBubble({ content }: { content: string }) {
     </div>
   );
 }
- 
+
 function AssistantBubble({
   message,
   toolCalls,
   isStreaming,
 }: {
-  message: AIMessage;
-  toolCalls: ReturnType<typeof useAgentStream>["toolCalls"];
+  message:     AIMessage;
+  toolCalls:   ReturnType<typeof useAgentStream>["toolCalls"];
   isStreaming?: boolean;
 }) {
-  const text = typeof message.content === "string" ? message.content : "";
-  const msgToolCallIds = (message.tool_calls ?? []).map((t) => t.id ?? "");
- 
-  const relevant = toolCalls.filter((tc) =>
-    msgToolCallIds.includes(tc.call.id)
-  );
- 
+  const text              = typeof message.content === "string" ? message.content : "";
+  const msgToolCallIds    = (message.tool_calls ?? []).map((t) => t.id ?? "");
+  const relevant          = toolCalls.filter((tc) => msgToolCallIds.includes(tc.call.id));
+
   return (
     <div className="group flex flex-col px-2 pb-4">
       <div className="mb-1.5 flex items-center gap-2 pl-2">
@@ -68,23 +69,14 @@ function AssistantBubble({
           </span>
         )}
       </div>
- 
+
       <div className="flex flex-col gap-y-2 pl-9">
-        {/* Tool call cards */}
         {relevant.length > 0 && (
           <div className="space-y-0.5">
-            {relevant.map((tc) => (
-              <ToolCard key={tc.call.id} toolCall={tc} />
-            ))}
+            {relevant.map((tc) => <ToolCard key={tc.call.id} toolCall={tc} />)}
           </div>
         )}
- 
-        {/* Text content */}
-        {text && (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
-        )}
- 
-        {/* Loading dots when no content yet */}
+        {text && <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>}
         {isStreaming && !text && relevant.length === 0 && (
           <div className="flex items-center gap-1.5">
             <div className="bg-muted-foreground/40 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:-0.3s]" />
@@ -96,20 +88,24 @@ function AssistantBubble({
     </div>
   );
 }
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Main panel
+// AgentPanel
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 export default function AgentPanel({
   projectId,
   sessionId,
   setActiveFragment,
+  initialPrompt,
+  initialModel,
 }: Props) {
+  const router     = useRef(useRouter());
   const bottomRef  = useRef<HTMLDivElement>(null);
-  const [model, setModel] = useState<string>("claude-sonnet-4-6");
- 
-  const { messages, isStreaming, toolCalls, interrupt, error, canRejoin, send, approveHitl, rejoin } =
+  const didAutoSend = useRef(false);
+  const [model, setModel] = useState(initialModel ?? "claude-sonnet-4-6");
+
+  const { messages, isStreaming, toolCalls, interrupt, error, canRejoin, send, approveHitl, rejoin, isReady } =
     useAgentStream({
       projectId,
       sessionId,
@@ -125,12 +121,28 @@ export default function AgentPanel({
         });
       },
     });
- 
-  // Auto-scroll
+
+  // ── Auto-send the initial prompt once the stream hook is ready ─────────────
+  // Only fires on new-project creation (initialPrompt is present).
+  // isReady becomes true once the JWT has been minted by /api/agent/token,
+  // which means the LangGraph server can accept the first message.
+  useEffect(() => {
+    if (!initialPrompt || !isReady || didAutoSend.current) return;
+    didAutoSend.current = true;
+
+    // Strip ?prompt and ?model from the URL so a page refresh doesn't
+    // re-trigger the agent with the same message.
+    const cleanUrl = window.location.pathname;
+    router.current.replace(cleanUrl);
+
+    send(initialPrompt, model);
+  }, [initialPrompt, isReady, model, send]);
+
+  // ── Auto-scroll ─────────────────────────────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, isStreaming]);
- 
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -142,12 +154,11 @@ export default function AgentPanel({
               </p>
             </div>
           )}
- 
+
           {messages.map((msg, i) => {
             const isLast = i === messages.length - 1;
             if (msg._getType() === "human") {
-              const content = typeof msg.content === "string" ? msg.content : "";
-              return <UserBubble key={msg.id ?? i} content={content} />;
+              return <UserBubble key={msg.id ?? i} content={typeof msg.content === "string" ? msg.content : ""} />;
             }
             if (msg._getType() === "ai") {
               return (
@@ -161,25 +172,22 @@ export default function AgentPanel({
             }
             return null;
           })}
- 
-          {/* HITL approval card */}
+
           {interrupt && (
             <HITLCard
-              interrupt={interrupt as { value: any }}
-              onRespond={({ decision, args, reason }) =>
+              interrupt={interrupt as { value: unknown }}
+              onRespond={({ decision, args, reason }: { decision: "approve" | "reject" | "edit"; args?: unknown; reason?: string }) =>
                 approveHitl(decision, args, reason)
               }
             />
           )}
- 
-          {/* Error */}
+
           {error && (
             <div className="mx-2 my-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               {String(error)}
             </div>
           )}
- 
-          {/* Rejoin banner — shown when tab was away and agent ran in background */}
+
           {canRejoin && !isStreaming && (
             <div className="mx-2 my-2 flex items-center justify-between rounded-lg border border-blue-400/40 bg-blue-50/50 px-3 py-2 text-sm dark:border-blue-500/30 dark:bg-blue-950/20">
               <span className="text-blue-700 dark:text-blue-300">
@@ -193,11 +201,11 @@ export default function AgentPanel({
               </button>
             </div>
           )}
- 
+
           <div ref={bottomRef} />
         </div>
       </div>
- 
+
       <div className="relative px-3 pb-3 pt-1">
         <div className="to-background pointer-events-none absolute -top-8 right-0 left-0 h-8 bg-gradient-to-b from-transparent" />
         <MessageForm
@@ -211,4 +219,3 @@ export default function AgentPanel({
     </div>
   );
 }
- 

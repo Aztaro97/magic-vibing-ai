@@ -26,7 +26,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const LANGGRAPH_SERVER_URL =
 	process.env.NEXT_PUBLIC_LANGGRAPH_SERVER_URL ?? "http://localhost:2024";
 
-const AGENT_ASSISTANT_ID = "agent"; // matches the graph key in langgraph.json
+const AGENT_ASSISTANT_ID = "deep-agents"; // matches the graph key in langgraph.json
 
 const TOKEN_REFRESH_BUFFER_MS = 30_000; // refresh JWT 30s before expiry
 
