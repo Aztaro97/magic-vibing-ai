@@ -1,9 +1,9 @@
 // packages/sandboxes/src/concurrency.ts
 
 import { env } from "../env";
-import { queryLabels } from "./labels.js";
+import { queryLabels } from "./labels";
 
-const MAX_ACTIVE_PER_ORG = env.SANDBOX_MAX_CONCURRENT_PER_USER ?? 5;
+const MAX_ACTIVE_PER_ORG = parseInt(env.SANDBOX_MAX_CONCURRENT_PER_USER ?? "5");
 
 /**
  * Counts how many active (non-warm, non-stopped) sandboxes the org currently has.

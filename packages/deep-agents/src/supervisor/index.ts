@@ -78,7 +78,7 @@ export function createMagicVibingAgent(
 				allowedDecisions: ["approve", "edit", "reject"],
 			},
 		},
-	});
+	}) as any as DeepAgent;
 }
 
 // Re-export so consumers don't need to import from deepagents directly

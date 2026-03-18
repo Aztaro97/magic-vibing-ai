@@ -83,7 +83,7 @@ export class E2BSandboxBackend extends BaseSandbox {
 
 	async execute(command: string): Promise<ExecuteResponse> {
 		const result = await this._sandbox.commands.run(command, {
-			timeoutMs: (env.SANDBOX_TIMEOUT_SECONDS ?? 300) * 1_000,
+			timeoutMs: parseInt(env.SANDBOX_TIMEOUT_SECONDS ?? "300") * 1_000,
 		});
 
 		return {

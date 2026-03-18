@@ -9,13 +9,13 @@ export const env = createEnv({
 		GEMINI_API_KEY: z.string().min(1),
 		POSTGRES_URL: z.string(),
 		E2B_API_KEY: z.string().min(1),
-		SANDBOX_TIMEOUT_SECONDS: z.number().optional().default(300),
+		SANDBOX_TIMEOUT_SECONDS: z.string().optional().default("300"),
 		DAYTONA_API_KEY: z.string().min(1).optional(),
-		DAYTONA_AUTO_STOP_INTERVAL: z.number().optional().default(15),
+		DAYTONA_AUTO_STOP_INTERVAL: z.string().optional().default("15"),
 		DAYTONA_DEFAULT_IMAGE: z.string().optional().default("node:20"),
 		DAYTONA_TARGET: z.enum(["us", "eu"]).optional().default("us"),
 		AGENT_LOG_LEVEL: z.string().optional(),
-		SANDBOX_MAX_CONCURRENT_PER_USER: z.number().optional().default(5),
+		SANDBOX_MAX_CONCURRENT_PER_USER: z.string().optional().default("5"),
 
 		LANGCHAIN_TRACING_V2: z.string().optional().default("true"),
 		LANGCHAIN_ENDPOINT: z

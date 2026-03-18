@@ -14,7 +14,7 @@
 //    replicas. For cross-replica sharing, replace with a Redis-backed pool.
 
 import { env } from "../env";
-import { DaytonaSandboxBackend } from "./providers/daytona.js";
+import { DaytonaSandboxBackend } from "./providers/daytona";
 import type { ComplexityTier, PoolEntry } from "./types";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ import type { ComplexityTier, PoolEntry } from "./types";
 const POOL_TTL_MS = 10 * 60 * 1_000; // 10 min
 
 /** Max pool size (one entry per project in this implementation). */
-const MAX_ENTRIES = env.SANDBOX_MAX_CONCURRENT_PER_USER ?? 5;
+const MAX_ENTRIES = parseInt(env.SANDBOX_MAX_CONCURRENT_PER_USER ?? "5");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pool state

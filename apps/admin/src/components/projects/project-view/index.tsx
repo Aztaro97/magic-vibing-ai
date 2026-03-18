@@ -1,20 +1,21 @@
 "use client";
 
-import { Suspense, useState } from "react";
 import { CodeIcon, EyeIcon, Loader2Icon } from "lucide-react";
+import { Suspense, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import type { Fragment } from "@acme/db";
 import { cn } from "@acme/ui";
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
 } from "@acme/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@acme/ui/tabs";
 
+import { useSession } from "@acme/auth/client";
+import AgentPanel from "~/components/agent-panel";
 import { ErrorNotificationContainer } from "../error-notification-container";
-import MessageContainer from "../messages-container";
 import { FileExplorer } from "./file-explorer";
 import FragmentWeb from "./fragment-web";
 import ProjectHeader from "./project-header";
@@ -52,6 +53,7 @@ function ErrorFallback({ error, label }: { error?: Error; label: string }) {
 function ProjectView({ projectId }: Props) {
   const [activeFragment, setActiveFragment] = useState<Fragment | null>(null);
   const [tabState, setTabState] = useState<"preview" | "code">("preview");
+  const { data: session } = useSession();
 
   return (
     <div className="h-screen">
@@ -87,11 +89,12 @@ function ProjectView({ projectId }: Props) {
             <Suspense
               fallback={<LoadingSkeleton label="Loading messages..." />}
             >
-              <MessageContainer
+              {/* <MessageContainer
                 projectId={projectId}
                 activeFragment={activeFragment}
                 setActiveFragment={setActiveFragment}
-              />
+              /> */}
+			  <AgentPanel projectId={projectId} sessionId={session?.user.id ?? ""} activeFragment={activeFragment} setActiveFragment={setActiveFragment} />
             </Suspense>
           </ErrorBoundary>
         </ResizablePanel>

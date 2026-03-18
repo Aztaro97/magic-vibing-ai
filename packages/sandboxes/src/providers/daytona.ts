@@ -52,7 +52,7 @@ export class DaytonaSandboxBackend {
 		tenantLabels: Pick<SandboxLabels, "orgId" | "projectId" | "sessionId">,
 	): Promise<DaytonaSandboxBackend> {
 		const resources = daytonaResources(tier, hints);
-		const autoStop = env.DAYTONA_AUTO_STOP_INTERVAL ?? 15;
+		const autoStop = parseInt(env.DAYTONA_AUTO_STOP_INTERVAL ?? "15");
 		const image =
 			hints.customImage ?? (env.DAYTONA_DEFAULT_IMAGE || "node:20");
 

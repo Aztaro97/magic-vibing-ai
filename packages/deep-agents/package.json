@@ -30,6 +30,10 @@
       "import": "./src/prompts/index.ts",
       "types": "./src/prompts/index.ts"
     },
+    "./auth": {
+      "import": "./src/auth.ts",
+      "types": "./src/auth.ts"
+    },
     "./types": {
       "import": "./src/types.ts",
       "types": "./src/types.ts"
