@@ -55,7 +55,10 @@
     "ANTHROPIC_API_KEY",
     "OPENAI_API_KEY",
     "GEMINI_API_KEY",
-    "NGROK_AUTHTOKEN"
+    "NGROK_AUTHTOKEN",
+	"LANGCHAIN_API_KEY",
+	"NEXT_PUBLIC_APP_URL"
+
   ],
   "globalPassThroughEnv": [
     "NODE_ENV",

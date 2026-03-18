@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 import { auth } from "@acme/auth";
 import { and, db, eq, project } from "@acme/db";
@@ -13,10 +13,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Parse request body
@@ -27,7 +24,7 @@ export async function POST(req: NextRequest) {
     if (!socketId || !channelName) {
       return NextResponse.json(
         { error: "Missing socket_id or channel_name" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,18 +38,12 @@ export async function POST(req: NextRequest) {
         .select()
         .from(project)
         .where(
-          and(
-            eq(project.id, projectId),
-            eq(project.userId, session.user.id)
-          )
+          and(eq(project.id, projectId), eq(project.userId, session.user.id)),
         )
         .limit(1);
 
       if (userProject.length === 0) {
-        return NextResponse.json(
-          { error: "Forbidden" },
-          { status: 403 }
-        );
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }
 
@@ -65,7 +56,7 @@ export async function POST(req: NextRequest) {
     console.error("Pusher auth error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

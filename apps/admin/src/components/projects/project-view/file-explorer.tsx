@@ -1,23 +1,23 @@
-import { CopyCheckIcon, CopyIcon } from "lucide-react";
 import { Fragment, useCallback, useMemo, useState } from "react";
+import { CopyCheckIcon, CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { convertFilesToTreeItems } from "@acme/ui";
 import {
-    Breadcrumb,
-    BreadcrumbEllipsis,
-    BreadcrumbItem,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@acme/ui/breadcrumb";
 import { Button } from "@acme/ui/button";
 import CodeView from "@acme/ui/code-view";
 import Hint from "@acme/ui/hint";
 import {
-    ResizableHandle,
-    ResizablePanel,
-    ResizablePanelGroup,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
 } from "@acme/ui/resizable";
 import TreeView from "@acme/ui/tree-view";
 

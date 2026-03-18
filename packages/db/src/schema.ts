@@ -8,6 +8,14 @@ import {
 } from "drizzle-orm/pg-core";
 
 // Import and export application tables
+import {
+	agentEvent,
+	agentEventRelations,
+	agentSession,
+	agentSessionRelations,
+	agentTodo,
+	agentTodoRelations
+} from "./agents";
 import { fragment } from "./fragment";
 import { llmKey } from "./llm-key";
 import { message, messageRoleEnum, messageTypeEnum } from "./message";
@@ -163,5 +171,19 @@ export const fragmentRelations = relations(fragment, ({ one }) => ({
 	}),
 }));
 
-export { fragment, llmKey, message, messageRoleEnum, messageTypeEnum, project };
+export {
+
+	agentEvent,
+	agentEventRelations,
+	agentSession,
+	agentSessionRelations,
+	agentTodo,
+	agentTodoRelations,
+	fragment,
+	llmKey,
+	message,
+	messageRoleEnum,
+	messageTypeEnum,
+	project
+};
 

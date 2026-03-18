@@ -1,0 +1,78 @@
+{
+  "name": "@acme/sandboxes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dual sandbox router for Magic Vibing AI — E2B (primary, fast tasks) and Daytona (secondary, Git/Docker/long sessions)",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./e2b": {
+      "import": "./src/providers/e2b.ts",
+      "types": "./src/providers/e2b.ts"
+    },
+    "./daytona": {
+      "import": "./src/providers/daytona.ts",
+      "types": "./src/providers/daytona.ts"
+    },
+    "./router": {
+      "import": "./src/router.ts",
+      "types": "./src/router.ts"
+    },
+    "./pool": {
+      "import": "./src/pool.ts",
+      "types": "./src/pool.ts"
+    },
+    "./labels": {
+      "import": "./src/labels.ts",
+      "types": "./src/labels.ts"
+    },
+    "./types": {
+      "import": "./src/types.ts",
+      "types": "./src/types.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "lint:fix": "eslint . --fix",
+    "dev": "pnpm with-env tsc --watch",
+    "with-env": "dotenv -e ../../.env --",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "template:build:nextjs": "e2b template build --dockerfile sandbox-templates/nextjs/e2b.Dockerfile --name nextjs-sandbox",
+    "template:build:expo": "e2b template build --dockerfile sandbox-templates/expo/e2b.Dockerfile --name expo-sandbox",
+    "template:publish:nextjs": "e2b template publish nextjs-sandbox",
+    "template:publish:expo": "e2b template publish expo-sandbox"
+  },
+  "dependencies": {
+    "@acme/validators": "workspace:*",
+    "@daytonaio/sdk": "^0.21.0",
+    "@e2b/code-interpreter": "^2.3.3",
+    "@langchain/daytona": "^0.1.2",
+    "deepagents": "^1.6.3",
+    "e2b": "^2.14.1",
+    "vitest": "^4.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@acme/eslint-config": "workspace:*",
+    "@acme/tsconfig": "workspace:*",
+    "@langchain/core": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "@langchain/core": "^0.3.56"
+  },
+  "pnpm": {
+    "overrides": {
+      "@langchain/core": "^0.3.56"
+    }
+  }
+}

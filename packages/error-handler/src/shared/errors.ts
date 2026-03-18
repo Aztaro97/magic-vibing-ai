@@ -30,8 +30,7 @@ export class AppError extends Error {
 export function classifyError(error: unknown): AppError {
   if (error instanceof AppError) return error;
 
-  const message =
-    error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : String(error);
   const lowerMsg = message.toLowerCase();
 
   // Rate limit errors (E2B, LLM providers)
@@ -95,8 +94,7 @@ export function classifyError(error: unknown): AppError {
   ) {
     return new AppError({
       message,
-      userMessage:
-        "Connection issue. Please check your network and try again.",
+      userMessage: "Connection issue. Please check your network and try again.",
       code: "NETWORK_ERROR",
       retryable: true,
       cause: error,

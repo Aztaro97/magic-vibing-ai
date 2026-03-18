@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpIcon, Loader2Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import TextareaAutosize from "react-textarea-autosize";
 import { toast } from "sonner";
@@ -44,7 +44,13 @@ function ProjectForm() {
     trpc.projects.create.mutationOptions({
       onSuccess: (data) => {
         queryClient.invalidateQueries(trpc.projects.getMany.queryOptions());
-        router.push(`/project/${data.id}`);
+
+        // Encode the initial prompt in the URL.
+        // The project page reads ?prompt, fires useStream.send(), then strips it.
+        const url = new URL(`/project/${data.id}`, window.location.origin);
+        url.searchParams.set("prompt", data.initialPrompt);
+        url.searchParams.set("model",  form.getValues("model"));
+        router.push(url.pathname + url.search);
       },
       onError: (error) => {
         toast.error(error.message);
@@ -53,22 +59,19 @@ function ProjectForm() {
   );
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    createProject.mutate({
-      value: values.value,
-      model: values.model,
-    });
+    createProject.mutate({ value: values.value, model: values.model });
   };
 
   const onSelect = (value: string) => {
     form.setValue("value", value, {
-      shouldDirty: true,
-      shouldTouch: true,
+      shouldDirty:    true,
+      shouldTouch:    true,
       shouldValidate: true,
     });
   };
 
   const [isFocused, setIsFocused] = useState(false);
-  const isPending = createProject.isPending;
+  const isPending      = createProject.isPending;
   const isButtonDisabled = isPending || !form.formState.isValid;
 
   return (
@@ -79,7 +82,7 @@ function ProjectForm() {
           className={cn(
             "bg-card/80 relative overflow-hidden rounded-2xl border backdrop-blur-sm transition-all duration-200",
             isFocused
-              ? "border-amber-500/30 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20"
+              ? "border-amber-500/30 shadow-lg ring-1 shadow-amber-500/5 ring-amber-500/20"
               : "border-border/60 shadow-sm",
           )}
         >
@@ -113,9 +116,7 @@ function ProjectForm() {
               <ModelSelectForm
                 value={form.watch("model")}
                 onChange={(model) => {
-                  form.setValue("model" as any, model as any, {
-                    shouldDirty: true,
-                  });
+                  form.setValue("model" as never, model as never, { shouldDirty: true });
                 }}
               />
             </div>

@@ -12,9 +12,9 @@ import type { HelloWorldState } from "@acme/validators";
 
 import { getCheckpointer } from "../checkpointer";
 import {
-	createExpoSandboxNode,
-	getHelloWorldUrlNode,
-	notifyStatusNode,
+  createExpoSandboxNode,
+  getHelloWorldUrlNode,
+  notifyStatusNode,
 } from "../nodes/index";
 
 // ============================================================================
@@ -30,24 +30,24 @@ import {
  * 3. Notify completion
  */
 export function createHelloWorldGraph() {
-	const graph = new StateGraph<HelloWorldState>({
-		channels: {} as any,
-	});
+  const graph = new StateGraph<HelloWorldState>({
+    channels: {} as any,
+  });
 
-	// Add nodes
-	graph.addNode("create_sandbox", createExpoSandboxNode as any);
-	graph.addNode("get_url", getHelloWorldUrlNode as any);
-	graph.addNode("notify_complete", notifyStatusNode("completed") as any);
+  // Add nodes
+  graph.addNode("create_sandbox", createExpoSandboxNode as any);
+  graph.addNode("get_url", getHelloWorldUrlNode as any);
+  graph.addNode("notify_complete", notifyStatusNode("completed") as any);
 
-	// Define edges
-	graph.addEdge("__start__" as any, "create_sandbox" as any);
-	graph.addEdge("create_sandbox" as any, "get_url" as any);
-	graph.addEdge("get_url" as any, "notify_complete" as any);
-	graph.addEdge("notify_complete" as any, "__end__" as any);
+  // Define edges
+  graph.addEdge("__start__" as any, "create_sandbox" as any);
+  graph.addEdge("create_sandbox" as any, "get_url" as any);
+  graph.addEdge("get_url" as any, "notify_complete" as any);
+  graph.addEdge("notify_complete" as any, "__end__" as any);
 
-	// Compile with checkpointer for state persistence
-	const checkpointer = getCheckpointer();
-	return graph.compile({ checkpointer });
+  // Compile with checkpointer for state persistence
+  const checkpointer = getCheckpointer();
+  return graph.compile({ checkpointer });
 }
 
 // ============================================================================
@@ -60,10 +60,10 @@ let helloWorldGraph: ReturnType<typeof createHelloWorldGraph> | null = null;
  * Get or create the hello world graph instance
  */
 export function getHelloWorldGraph() {
-	if (!helloWorldGraph) {
-		helloWorldGraph = createHelloWorldGraph();
-	}
-	return helloWorldGraph;
+  if (!helloWorldGraph) {
+    helloWorldGraph = createHelloWorldGraph();
+  }
+  return helloWorldGraph;
 }
 
 // ============================================================================
@@ -77,22 +77,22 @@ export function getHelloWorldGraph() {
  * @returns Final state with sandbox URL
  */
 export async function runHelloWorldGraph(input: {
-	projectId: string;
-	userId: string;
-	runId: string;
+  projectId: string;
+  userId: string;
+  runId: string;
 }) {
-	const graph = getHelloWorldGraph();
+  const graph = getHelloWorldGraph();
 
-	const result = await graph.invoke({
-		...input,
-		currentStep: "init",
-		completedSteps: [],
-		createdAt: new Date(),
-		updatedAt: new Date(),
-		modelProvider: "openai" as const,
-		errorRecoverable: false,
-		streamEvents: [],
-	});
+  const result = await graph.invoke({
+    ...input,
+    currentStep: "init",
+    completedSteps: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    modelProvider: "openai" as const,
+    errorRecoverable: false,
+    streamEvents: [],
+  });
 
-	return result as HelloWorldState;
+  return result as HelloWorldState;
 }

@@ -38,15 +38,16 @@ export default function MessageContainer({
       {
         // Reduce polling when streaming is active
         refetchInterval: streaming.isStreaming ? 10000 : 5000,
-      }
-    )
+      },
+    ),
   );
 
   useEffect(() => {
     const assistantMessages = messages.filter(
-      (msg) => msg.role === "ASSISTANT"
+      (msg) => msg.role === "ASSISTANT",
     );
-    const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
+    const lastAssistantMessage =
+      assistantMessages[assistantMessages.length - 1];
 
     if (
       lastAssistantMessage?.fragment &&
@@ -98,13 +99,15 @@ export default function MessageContainer({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="py-3 pr-1">
-          {messages.length === 0 && !showStreamingUI && !showFallbackLoading && (
-            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <p className="text-muted-foreground text-sm">
-                Start a conversation to build something
-              </p>
-            </div>
-          )}
+          {messages.length === 0 &&
+            !showStreamingUI &&
+            !showFallbackLoading && (
+              <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+                <p className="text-muted-foreground text-sm">
+                  Start a conversation to build something
+                </p>
+              </div>
+            )}
 
           {messages.map((message) => {
             if (streaming.isStreaming && message.id === streaming.messageId) {
@@ -139,7 +142,7 @@ export default function MessageContainer({
           <div ref={bottomRef} />
         </div>
       </div>
-      <div className="relative px-3 pb-3 pt-1">
+      <div className="relative px-3 pt-1 pb-3">
         <div className="to-background pointer-events-none absolute -top-8 right-0 left-0 h-8 bg-gradient-to-b from-transparent" />
         <MessageForm projectId={projectId} />
       </div>

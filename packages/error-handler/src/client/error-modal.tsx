@@ -56,7 +56,7 @@ export function ErrorModal({
 
         {/* Error message */}
         <div className="bg-muted max-h-64 overflow-auto rounded-md p-3">
-          <pre className="text-foreground whitespace-pre-wrap text-sm">
+          <pre className="text-foreground text-sm whitespace-pre-wrap">
             {error.message}
           </pre>
         </div>

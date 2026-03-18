@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import type { Channel } from "pusher-js";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { CHANNELS, getPusherClient } from "@acme/pusher/client";
 
 import type { ErrorNotification } from "../shared/types";
@@ -39,11 +40,17 @@ export function useErrorNotifications(
   projectId: string | undefined,
   options: UseErrorNotificationsOptions = {},
 ): UseErrorNotificationsReturn {
-  const { onSendToFix, channelName, deduplicate = true, maxErrors = 50 } = options;
+  const {
+    onSendToFix,
+    channelName,
+    deduplicate = true,
+    maxErrors = 50,
+  } = options;
 
   const [errors, setErrors] = useState<ErrorNotification[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [errorModalData, setErrorModalData] = useState<ErrorNotification | null>(null);
+  const [errorModalData, setErrorModalData] =
+    useState<ErrorNotification | null>(null);
   const channelRef = useRef<Channel | null>(null);
   const seenHashes = useRef<Set<string>>(new Set());
 

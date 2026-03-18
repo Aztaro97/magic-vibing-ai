@@ -1,17 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import type { Channel } from "pusher-js";
-import {
-  CHANNELS,
-  EVENTS,
-  getPusherClient,
-  type AgentStatusPayload,
-  type StreamChunkPayload,
-  type StreamEndPayload,
-  type StreamErrorPayload,
-  type StreamStartPayload,
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import type {
+  AgentStatusPayload,
+  StreamChunkPayload,
+  StreamEndPayload,
+  StreamErrorPayload,
+  StreamStartPayload,
 } from "@acme/pusher/client";
+import { CHANNELS, EVENTS, getPusherClient } from "@acme/pusher/client";
 
 export type AgentStatus =
   | "idle"

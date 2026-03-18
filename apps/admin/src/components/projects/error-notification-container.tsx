@@ -3,11 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import {
-  ErrorModal,
-  useErrorNotifications,
-} from "@acme/error-handler/client";
 import type { ErrorNotification } from "@acme/error-handler/shared";
+import { ErrorModal, useErrorNotifications } from "@acme/error-handler/client";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -87,7 +84,8 @@ function showErrorToast(
     duration: Infinity,
     action: {
       label: "Send to Fix",
-      onClick: () => onSendToFix(`Fix this error:\n\`\`\`\n${error.message}\n\`\`\``),
+      onClick: () =>
+        onSendToFix(`Fix this error:\n\`\`\`\n${error.message}\n\`\`\``),
     },
     cancel: {
       label: "Details",
