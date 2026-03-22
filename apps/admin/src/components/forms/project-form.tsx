@@ -10,7 +10,7 @@ import TextareaAutosize from "react-textarea-autosize";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { DEFAULT_MODEL } from "@acme/agents/constants";
+import { DEFAULT_MODEL } from "@acme/deep-agents/constants";
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { Form, FormField } from "@acme/ui/form";

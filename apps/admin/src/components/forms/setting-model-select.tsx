@@ -1,17 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Bot, Check, ChevronDown } from "lucide-react";
+import { useMemo } from "react";
 
-import { DEFAULT_MODEL, LLM_MODELS } from "@acme/agents/constants";
+import { DEFAULT_MODEL, LLM_MODELS } from "@acme/deep-agents/constants";
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
 } from "@acme/ui/dropdown-menu";
 
 import { useTRPC } from "~/trpc/react";

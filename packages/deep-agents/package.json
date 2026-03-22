@@ -37,6 +37,10 @@
     "./types": {
       "import": "./src/types.ts",
       "types": "./src/types.ts"
+    },
+    "./constants": {
+      "import": "./src/constants/index.ts",
+      "types": "./src/constants/index.ts"
     }
   },
   "scripts": {
