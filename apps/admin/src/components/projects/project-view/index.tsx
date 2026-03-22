@@ -12,7 +12,7 @@ import {
 } from "@acme/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@acme/ui/tabs";
 
-import AgentPanel from "~/components/agent-panel";
+import AgentPanel from "./agent-panel";
 import { ErrorNotificationContainer } from "../error-notification-container";
 import { FileExplorer } from "./file-explorer";
 import FragmentWeb from "./fragment-web";

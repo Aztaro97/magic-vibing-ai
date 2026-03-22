@@ -6,6 +6,40 @@ import { and, db, eq, message, project } from "@acme/db";
 
 import { protectedProcedure } from "../trpc";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Verify the project exists and belongs to the current user.
+ * Throws NOT_FOUND when the project doesn't exist or isn't owned by `userId`.
+ */
+async function verifyProjectOwnership(projectId: string, userId: string) {
+	const [existingProject] = await db
+		.select()
+		.from(project)
+		.where(
+			and(
+				eq(project.id, projectId),
+				eq(project.userId, userId),
+			),
+		)
+		.limit(1);
+
+	if (!existingProject) {
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Project not found",
+		});
+	}
+
+	return existingProject;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Router
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const messageRouter = {
 	getMany: protectedProcedure
 		.input(
@@ -14,26 +48,8 @@ export const messageRouter = {
 			}),
 		)
 		.query(async ({ input, ctx }) => {
-			// First verify the project belongs to the user
-			const userProject = await db
-				.select()
-				.from(project)
-				.where(
-					and(
-						eq(project.id, input.projectId),
-						eq(project.userId, ctx.session.user.id),
-					),
-				)
-				.limit(1);
+			await verifyProjectOwnership(input.projectId, ctx.session.user.id);
 
-			if (userProject.length === 0) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Project not found or access denied",
-				});
-			}
-
-			// Query messages with fragment relation
 			const messages = await db.query.message.findMany({
 				where: eq(message.projectId, input.projectId),
 				with: {
@@ -44,75 +60,51 @@ export const messageRouter = {
 
 			return messages;
 		}),
+
 	create: protectedProcedure
 		.input(
 			z.object({
-				value: z
-					.string()
-					.min(1, { message: "Prompt is required" })
-					.max(1000, { message: "Prompt is too long" }),
+				value: z.string().min(1, { message: "Prompt is required" }).max(1000, { message: "Prompt is too long" }),
 				projectId: z.string().min(1, { message: "Project Id is required" }),
 				model: z.string().min(1, { message: "Model is required" }),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			// Verify project exists and belongs to user
-			const existingProject = await db
-				.select()
-				.from(project)
-				.where(
-					and(
-						eq(project.id, input.projectId),
-						eq(project.userId, ctx.session.user.id),
-					),
-				)
-				.limit(1);
+			const userId = ctx.session.user.id;
+			const existingProject = await verifyProjectOwnership(input.projectId, userId);
 
-			if (existingProject.length === 0) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Project Not Found",
-				});
-			}
+			// Wrap model-update + message-insert in a single transaction
+			const createdMessage = await db.transaction(async (tx) => {
+				// Update project model if it changed
+				if (existingProject.model !== input.model) {
+					await tx
+						.update(project)
+						.set({ model: input.model })
+						.where(eq(project.id, input.projectId));
+				}
 
-			// UPDATE PROJECT MODEL IF IT'S NOT THE SAME
-			if (existingProject[0]?.model !== input.model) {
-				await db
-					.update(project)
-					.set({ model: input.model })
-					.where(eq(project.id, input.projectId));
-			}
+				const [msg] = await tx
+					.insert(message)
+					.values({
+						projectId: input.projectId,
+						content: input.value,
+						role: "USER",
+						type: "RESULT",
+					})
+					.returning();
 
-			// Create the message
-			const [createdMessage] = await db
-				.insert(message)
-				.values({
-					projectId: input.projectId,
-					content: input.value,
-					role: "USER",
-					type: "RESULT",
-				})
-				.returning();
+				if (!msg) {
+					throw new TRPCError({
+						code: "INTERNAL_SERVER_ERROR",
+						message: "Failed to create message",
+					});
+				}
 
-			if (!createdMessage) {
-				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Failed to create message",
-				});
-			}
+				return msg;
+			});
 
-			// Trigger LangGraph agent execution (async, don't await)
-			//   const runId = crypto.randomUUID();
-			//   runCodeAgentGraph({
-			//     projectId: input.projectId,
-			//     userId: ctx.session.user.id,
-			//     runId,
-			//     userPrompt: input.value,
-			//     modelProvider: input.model.includes("claude") ? "anthropic" : "openai",
-			//     template: "expo",
-			//   }).catch((error: unknown) => {
-			//     console.error("[api] LangGraph agent failed:", error);
-			//   });
+			// The LangGraph agent run is triggered client-side via useStream.submit()
+			// — no server-side fire-and-forget needed here.
 
 			return createdMessage;
 		}),
