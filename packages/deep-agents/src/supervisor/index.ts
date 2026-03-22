@@ -1,11 +1,13 @@
-import { ChatAnthropic } from "@langchain/anthropic";
 import type { BaseSandbox, DeepAgent } from "deepagents";
 import { createDeepAgent, StoreBackend } from "deepagents";
 
 import { env } from "../../env";
 import { getCheckpointer, getStore } from "../memory";
+import { anthropicModel } from "../models/anthropic-model";
+import { ollamaModel } from "../models/ollama-model";
 import { SUPERVISOR_PROMPT } from "../prompts";
 import { ALL_SUBAGENTS } from "../subagents";
+
 
 // ─────────────────────────────────────────
 // Model
@@ -15,13 +17,11 @@ function buildModel() {
 	const apiKey = env.ANTHROPIC_API_KEY;
 	if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
 
-	return new ChatAnthropic({
-		model: "claude-sonnet-4-6",
-		temperature: 0,
-		streaming: true,
-		maxTokens: 8192,
-		anthropicApiKey: apiKey,
-	});
+
+	if (env.NODE_ENV === "development") {
+		return ollamaModel({});
+	}
+	return anthropicModel({ modelName: "claude-opus-4-5" });
 }
 
 // ─────────────────────────────────────────

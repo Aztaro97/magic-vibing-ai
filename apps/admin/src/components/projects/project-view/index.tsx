@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import { CodeIcon, EyeIcon, Loader2Icon } from "lucide-react";
@@ -6,12 +8,9 @@ import { ErrorBoundary } from "react-error-boundary";
 
 import type { Fragment } from "@acme/db";
 import {
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
+	ResizableHandle, ResizablePanel, ResizablePanelGroup,
 } from "@acme/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@acme/ui/tabs";
-
 
 import AgentPanel from "~/components/agent-panel";
 import { ErrorNotificationContainer } from "../error-notification-container";
@@ -19,11 +18,7 @@ import { FileExplorer } from "./file-explorer";
 import FragmentWeb from "./fragment-web";
 import ProjectHeader from "./project-header";
 
-interface Props {
-  projectId:     string;
-  initialPrompt?: string;
-  initialModel?:  string;
-}
+interface Props { projectId: string }
 
 function LoadingSkeleton({ label }: { label: string }) {
   return (
@@ -41,66 +36,40 @@ function ErrorFallback({ error, label }: { error?: Error; label: string }) {
     <div className="flex h-full items-center justify-center p-4">
       <div className="text-center">
         <p className="text-destructive text-sm font-medium">Failed to load {label}</p>
-        <p className="text-muted-foreground mt-1 text-xs">
-          {error?.message ?? "An unexpected error occurred"}
-        </p>
+        <p className="text-muted-foreground mt-1 text-xs">{error?.message ?? "An unexpected error occurred"}</p>
       </div>
     </div>
   );
 }
 
-function ProjectView({ projectId, initialPrompt, initialModel }: Props) {
+function ProjectView({ projectId }: Props) {
   const [activeFragment, setActiveFragment] = useState<Fragment | null>(null);
-  const [tabState, setTabState]  = useState<"preview" | "code">("preview");
-const [sessionId] = useState(() => crypto.randomUUID());
-
-
-  // Stable sessionId for this page visit — used as the LangGraph thread ID
-  // and the agent session ID. A new session is created per page visit, which
-  // means refreshing the project page starts a new agent session but the chat
-  // history is loaded from the DB by AgentPanel.
-
+  const [tabState, setTabState]             = useState<"preview" | "code">("preview");
 
   return (
     <div className="h-screen">
       <ErrorNotificationContainer projectId={projectId} />
       <ResizablePanelGroup direction="horizontal">
-        {/* Chat / Agent Panel */}
-        <ResizablePanel
-          defaultSize={35}
-          minSize={25}
-          className="flex min-h-0 flex-col"
-        >
-          <ErrorBoundary
-            fallbackRender={({ error }) => (
-              <ErrorFallback error={error} label="project header" />
-            )}
-          >
-            <Suspense
-              fallback={
-                <div className="flex items-center gap-2 border-b px-3 py-2">
-                  <div className="bg-muted h-4 w-4 animate-pulse rounded" />
-                  <div className="bg-muted h-4 w-24 animate-pulse rounded" />
-                </div>
-              }
-            >
+        <ResizablePanel defaultSize={35} minSize={25} className="flex min-h-0 flex-col">
+          <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error} label="project header" />}>
+            <Suspense fallback={<div className="flex items-center gap-2 border-b px-3 py-2"><div className="bg-muted h-4 w-4 animate-pulse rounded" /><div className="bg-muted h-4 w-24 animate-pulse rounded" /></div>}>
               <ProjectHeader projectId={projectId} />
             </Suspense>
           </ErrorBoundary>
 
-          <ErrorBoundary
-            fallbackRender={({ error }) => (
-              <ErrorFallback error={error} label="chat" />
-            )}
-          >
+          <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error} label="chat" />}>
             <Suspense fallback={<LoadingSkeleton label="Loading messages…" />}>
+              {/*
+                sessionId = projectId:
+                  - One project = one LangGraph thread = one conversation history
+                  - Stable across page reloads (no random UUIDs)
+                  - thread_id inside useStream will be this value
+              */}
               <AgentPanel
                 projectId={projectId}
-                sessionId={sessionId}
+                sessionId={projectId}
                 activeFragment={activeFragment}
                 setActiveFragment={setActiveFragment}
-                initialPrompt={initialPrompt}
-                initialModel={initialModel}
               />
             </Suspense>
           </ErrorBoundary>
@@ -108,44 +77,27 @@ const [sessionId] = useState(() => crypto.randomUUID());
 
         <ResizableHandle withHandle />
 
-        {/* Preview / Code Panel */}
         <ResizablePanel defaultSize={65} minSize={30}>
-          <Tabs
-            value={tabState}
-            onValueChange={(v) => setTabState(v as "preview" | "code")}
-            className="flex h-full flex-col"
-          >
+          <Tabs value={tabState} onValueChange={(v) => setTabState(v as "preview" | "code")} className="flex h-full flex-col">
             <div className="flex items-center justify-between border-b px-3 py-1.5">
               <TabsList className="h-7">
                 <TabsTrigger value="preview" className="h-6 gap-1.5 text-xs">
-                  <EyeIcon className="h-3.5 w-3.5" />
-                  Preview
+                  <EyeIcon className="h-3.5 w-3.5" /> Preview
                 </TabsTrigger>
                 <TabsTrigger value="code" className="h-6 gap-1.5 text-xs">
-                  <CodeIcon className="h-3.5 w-3.5" />
-                  Code
+                  <CodeIcon className="h-3.5 w-3.5" /> Code
                 </TabsTrigger>
               </TabsList>
             </div>
-
             <TabsContent value="preview" className="mt-0 flex-1 overflow-hidden">
-              <ErrorBoundary
-                fallbackRender={({ error }) => (
-                  <ErrorFallback error={error} label="preview" />
-                )}
-              >
+              <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error} label="preview" />}>
                 <Suspense fallback={<LoadingSkeleton label="Loading preview…" />}>
                   <FragmentWeb fragment={activeFragment} />
                 </Suspense>
               </ErrorBoundary>
             </TabsContent>
-
             <TabsContent value="code" className="mt-0 h-full overflow-auto">
-              <ErrorBoundary
-                fallbackRender={({ error }) => (
-                  <ErrorFallback error={error} label="file explorer" />
-                )}
-              >
+              <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error} label="file explorer" />}>
                 <Suspense fallback={<LoadingSkeleton label="Loading files…" />}>
                   <FileExplorer fragment={activeFragment} />
                 </Suspense>
