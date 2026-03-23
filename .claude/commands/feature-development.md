@@ -14,9 +14,9 @@ Standard feature implementation workflow
 
 ## Common Files
 
-- `apps/admin/src/app/(dashboard)/*`
+- `/*`
 - `apps/admin/src/app/api/inngest/*`
-- `apps/admin/src/app/*`
+- `apps/admin/src/app/api/pusher/auth/*`
 - `**/*.test.*`
 - `**/api/**`
 
