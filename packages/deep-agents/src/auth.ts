@@ -1,4 +1,4 @@
-// // packages/agents/src/auth.ts
+
 // //
 // // CHANGED: Accepts two JWT types:
 // //   1. User JWT (sub = userId)  — from /api/agent/token, used by useStream

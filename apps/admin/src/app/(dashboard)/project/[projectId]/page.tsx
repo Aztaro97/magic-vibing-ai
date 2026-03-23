@@ -1,4 +1,3 @@
-// apps/admin/src/app/(dashboard)/project/[projectId]/page.tsx
 //
 // SIMPLIFIED: No searchParams — just projectId.
 // Pre-fetches both project and messages for the AgentPanel.
