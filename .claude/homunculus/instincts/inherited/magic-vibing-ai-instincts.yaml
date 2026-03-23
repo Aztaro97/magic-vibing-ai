@@ -1,0 +1,433 @@
+# Instincts generated from https://github.com/Aztaro97/magic-vibing-ai
+# Generated: 2026-03-23T11:36:09.299Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: magic-vibing-ai-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, chore, refactor, docs
+
+## Evidence
+
+- 54 commits analyzed
+- Detected conventional commit pattern
+- Examples: refactor: remove redundant file path comments and reformat sandbox cleanup job functions, docs: update architecture overview, package structure, data flow, agent system, sandbox system, and commands in CLAUDE.md
+
+---
+id: magic-vibing-ai-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Commit Length
+
+## Action
+
+Write detailed commit messages (~111 characters for first line)
+
+## Evidence
+
+- Average commit message length: 111 chars
+- Based on 54 commits
+
+---
+id: magic-vibing-ai-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: magic-vibing-ai-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: magic-vibing-ai-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Export Style
+
+## Action
+
+Prefer default exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: default
+
+---
+id: magic-vibing-ai-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: 
+
+---
+id: magic-vibing-ai-test-framework
+trigger: "when writing tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Test Framework
+
+## Action
+
+Use jest as the test framework
+
+## Evidence
+
+- Test framework detected: jest
+- File pattern: *.test.tsx
+
+---
+id: magic-vibing-ai-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.tsx
+
+## Evidence
+
+- File pattern: *.test.tsx
+- Consistent across test files
+
+---
+id: magic-vibing-ai-test-mocking
+trigger: "when mocking dependencies in tests"
+confidence: 0.75
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Test Mocking
+
+## Action
+
+Use jest.mock for mocking
+
+## Evidence
+
+- Mocking pattern detected: jest.mock
+- Consistent across test files
+
+---
+id: magic-vibing-ai-test-types
+trigger: "when planning tests for a feature"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Test Types
+
+## Action
+
+Write unit, integration tests to match project standards
+
+## Evidence
+
+- Test types detected: unit, integration
+- Coverage config: no
+
+---
+id: magic-vibing-ai-workflow-database-migration
+trigger: "when modifying the database schema or adding tables"
+confidence: 0.75
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Workflow Database Migration
+
+## Action
+
+Follow the database-migration workflow:
+1. Create migration file
+2. Update schema definitions
+3. Generate/update types
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~5x per month
+- Files: **/schema.*, **/types.ts
+
+---
+id: magic-vibing-ai-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~14x per month
+- Files: apps/admin/src/app/(dashboard)/*, apps/admin/src/app/api/inngest/*, apps/admin/src/app/*
+
+---
+id: magic-vibing-ai-workflow-refactoring
+trigger: "when refactoring code"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Workflow Refactoring
+
+## Action
+
+Follow the refactoring workflow:
+1. Ensure tests pass before refactor
+2. Refactor code structure
+3. Verify tests still pass
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~7x per month
+- Files: src/**/*
+
+---
+id: magic-vibing-ai-workflow-add-or-modify-database-table
+trigger: "when doing add or modify database table"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Workflow Add Or Modify Database Table
+
+## Action
+
+Follow the add-or-modify-database-table workflow:
+1. Edit or create new migration SQL file in packages/db/drizzle/
+2. Update snapshot and journal files in packages/db/drizzle/meta/
+3. Modify packages/db/src/schema.ts and related entity files (e.g., project.ts, message.ts, llm-key.ts, fragment.ts, agents.ts)
+4. Update API routers in packages/api/src/router/ if needed
+5. Update types in packages/db/src/types.ts if needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: packages/db/drizzle/*.sql, packages/db/drizzle/meta/*.json, packages/db/drizzle/meta/_journal.json
+
+---
+id: magic-vibing-ai-workflow-add-or-update-api-endpoint
+trigger: "when doing add or update api endpoint"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Workflow Add Or Update Api Endpoint
+
+## Action
+
+Follow the add-or-update-api-endpoint workflow:
+1. Create or modify route file in apps/admin/src/app/api/ or packages/api/src/router/
+2. Update router index or root file if necessary
+3. Update or create related test files if present
+4. Update frontend hooks or components if API shape changes
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: apps/admin/src/app/api/**/*.ts, packages/api/src/router/*.ts, packages/api/src/root.ts
+
+---
+id: magic-vibing-ai-workflow-add-new-llm-model-or-provider
+trigger: "when doing add new llm model or provider"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Workflow Add New Llm Model Or Provider
+
+## Action
+
+Follow the add-new-llm-model-or-provider workflow:
+1. Add or update model in packages/agents/src/models/ or packages/deep-agents/src/models/
+2. Update model constants in packages/agents/src/constants/index.ts or packages/deep-agents/src/constants/index.ts
+3. Add necessary environment variables in .env.example and env.ts files
+4. Update package.json dependencies if new SDKs are needed
+5. Update frontend model selection components
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: .env.example, packages/agents/src/models/*.ts, packages/agents/src/constants/index.ts
+
+---
+id: magic-vibing-ai-workflow-feature-development-ui-api-sync
+trigger: "when doing feature development ui api sync"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Workflow Feature Development Ui Api Sync
+
+## Action
+
+Follow the feature-development-ui-api-sync workflow:
+1. Create or update UI components in apps/admin/src/components/
+2. Update or add hooks in apps/admin/src/hooks/
+3. Modify or add API router files in packages/api/src/router/
+4. Update or add database schema/migrations if new data is needed
+5. Update package.json or pnpm-lock.yaml if dependencies are added
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: apps/admin/src/components/**/*.tsx, apps/admin/src/hooks/**/*.ts, packages/api/src/router/*.ts
+
+---
+id: magic-vibing-ai-workflow-add-or-update-shared-package
+trigger: "when doing add or update shared package"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Workflow Add Or Update Shared Package
+
+## Action
+
+Follow the add-or-update-shared-package workflow:
+1. Create or update package in packages/<name>/
+2. Update or add implementation files (src/)
+3. Update or add types/config files (tsconfig.json, eslint.config.js)
+4. Update package.json for dependencies
+5. Update references/imports in other packages or apps
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: packages/*/package.json, packages/*/src/**/*.ts, packages/*/tsconfig.json
+
+---
+id: magic-vibing-ai-workflow-update-tailwind-or-ui-theme
+trigger: "when doing update tailwind or ui theme"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Aztaro97/magic-vibing-ai
+---
+
+# Magic Vibing Ai Workflow Update Tailwind Or Ui Theme
+
+## Action
+
+Follow the update-tailwind-or-ui-theme workflow:
+1. Edit Tailwind config files (tooling/tailwind/*.ts, apps/admin/tailwind.config.ts)
+2. Update global CSS (apps/admin/src/app/globals.css, tooling/tailwind/src/styles.css)
+3. Update related UI components if needed
+4. Update package.json or pnpm-lock.yaml if dependencies change
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: tooling/tailwind/*.ts, apps/admin/tailwind.config.ts, apps/admin/src/app/globals.css
+
