@@ -1,12 +1,72 @@
-
+import { Client } from "@langchain/langgraph-sdk";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
+import * as jose from "jose";
 import { generateSlug } from "random-word-slugs";
 import { z } from "zod";
 
 import { and, asc, db, eq, message, project } from "@acme/db";
-
 import { protectedProcedure } from "../trpc";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared config (keep in sync with packages/agents/src/auth.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const JWT_SECRET = new TextEncoder().encode(
+	process.env.AUTH_SECRET ?? "missing-auth-secret"
+);
+
+const LANGGRAPH_SERVER_URL =
+	process.env.LANGGRAPH_SERVER_URL ?? "http://localhost:2024";
+
+/**
+ * Mint a 60-second service JWT so the tRPC router can call the LangGraph
+ * server to pre-create a thread. The auth.ts handler recognises sub="service"
+ * and grants thread-creation rights.
+ */
+async function mintServiceToken(projectId: string, userId: string) {
+	return new jose.SignJWT({ sub: "service", projectId, userId })
+		.setProtectedHeader({ alg: "HS256" })
+		.setIssuedAt()
+		.setIssuer("magic-vibing-ai")
+		.setAudience("langgraph-agent-server")
+		.setExpirationTime("60s")
+		.sign(JWT_SECRET);
+}
+
+/**
+ * Pre-create the LangGraph thread with thread_id = projectId.
+ * Uses a service JWT — not tied to any user request/cookie.
+ * Fails silently so the project is still created even if LangGraph is down.
+ */
+async function ensureLangGraphThread(projectId: string, userId: string) {
+	try {
+		const svcToken = await mintServiceToken(projectId, userId);
+		const client = new Client({
+			apiUrl: LANGGRAPH_SERVER_URL,
+			defaultHeaders: { Authorization: `Bearer ${svcToken}` },
+		});
+
+		await client.threads.create({
+			threadId: projectId,
+			metadata: {
+				projectId,
+				owner: userId,  // required by auth.on filter
+				userId,
+			},
+		});
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : String(err);
+		// "already exists" is fine — silently ignore it
+		if (!msg.includes("already exists") && !msg.includes("409")) {
+			console.warn("[projects.create] LangGraph thread pre-create failed:", msg);
+		}
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Router
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const projectRouter = {
 	create: protectedProcedure
@@ -17,12 +77,14 @@ export const projectRouter = {
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+
+			// 1. Create project + first USER message in a single transaction
 			const result = await db.transaction(async (tx) => {
-				// Create the project
 				const [createdProject] = await tx
 					.insert(project)
 					.values({
-						userId: ctx.session.user.id,
+						userId,
 						name: generateSlug(2, { format: "kebab" }),
 						model: input.model,
 					})
@@ -35,8 +97,8 @@ export const projectRouter = {
 					});
 				}
 
-				// Persist the initial USER message so the project page can show it
-				// immediately without waiting for the agent to respond.
+				// This message is the source-of-truth for the initial prompt.
+				// AgentPanel reads it from DB on load instead of needing URL params.
 				await tx.insert(message).values({
 					content: input.value,
 					role: "USER",
@@ -47,12 +109,13 @@ export const projectRouter = {
 				return createdProject;
 			});
 
-			// Return the project AND the original prompt so the client can pass it
-			// through the URL and auto-trigger the first agent message.
-			return {
-				...result,
-				initialPrompt: input.value,
-			};
+			// 2. Pre-create the LangGraph thread with thread_id = projectId (async)
+			//    Fire-and-forget is intentional — project creation succeeds regardless.
+			//    The token route has a safety-net creation too.
+			void ensureLangGraphThread(result.id, userId);
+
+			// 3. Return just the project id. Navigation: /project/{id} — no params.
+			return result;
 		}),
 
 	getOne: protectedProcedure

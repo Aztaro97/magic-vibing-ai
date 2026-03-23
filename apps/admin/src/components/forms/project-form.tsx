@@ -10,7 +10,7 @@ import TextareaAutosize from "react-textarea-autosize";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { DEFAULT_MODEL } from "@acme/agents/constants";
+import { DEFAULT_MODEL } from "@acme/deep-agents/constants";
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { Form, FormField } from "@acme/ui/form";
@@ -20,37 +20,28 @@ import { PROJECT_TEMPLATES } from "~/constants/data";
 import { useTRPC } from "~/trpc/react";
 
 const formSchema = z.object({
-  value: z
-    .string()
-    .min(1, { message: "Value is required" })
-    .max(1000, { message: "Value is too long" }),
+  value: z.string().min(1).max(1000),
   model: z.string(),
 });
 
 function ProjectForm() {
-  const router = useRouter();
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
+  const router       = useRouter();
+  const trpc         = useTRPC();
+  const queryClient  = useQueryClient();
+  const [isFocused, setIsFocused] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      value: "",
-      model: DEFAULT_MODEL,
-    },
+    resolver:      zodResolver(formSchema),
+    defaultValues: { value: "", model: DEFAULT_MODEL },
   });
 
   const createProject = useMutation(
     trpc.projects.create.mutationOptions({
       onSuccess: (data) => {
         queryClient.invalidateQueries(trpc.projects.getMany.queryOptions());
-
-        // Encode the initial prompt in the URL.
-        // The project page reads ?prompt, fires useStream.send(), then strips it.
-        const url = new URL(`/project/${data.id}`, window.location.origin);
-        url.searchParams.set("prompt", data.initialPrompt);
-        url.searchParams.set("model",  form.getValues("model"));
-        router.push(url.pathname + url.search);
+        // Clean URL — no ?prompt or ?model params.
+        // The initial prompt is in DB, thread is pre-created on the server.
+        router.push(`/project/${data.id}`);
       },
       onError: (error) => {
         toast.error(error.message);
@@ -58,20 +49,17 @@ function ProjectForm() {
     }),
   );
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
     createProject.mutate({ value: values.value, model: values.model });
   };
 
   const onSelect = (value: string) => {
     form.setValue("value", value, {
-      shouldDirty:    true,
-      shouldTouch:    true,
-      shouldValidate: true,
+      shouldDirty: true, shouldTouch: true, shouldValidate: true,
     });
   };
 
-  const [isFocused, setIsFocused] = useState(false);
-  const isPending      = createProject.isPending;
+  const isPending        = createProject.isPending;
   const isButtonDisabled = isPending || !form.formState.isValid;
 
   return (
@@ -112,14 +100,10 @@ function ProjectForm() {
           </div>
 
           <div className="flex items-center justify-between gap-2 p-3 pt-2">
-            <div className="flex items-center gap-1">
-              <ModelSelectForm
-                value={form.watch("model")}
-                onChange={(model) => {
-                  form.setValue("model" as never, model as never, { shouldDirty: true });
-                }}
-              />
-            </div>
+            <ModelSelectForm
+              value={form.watch("model")}
+              onChange={(model) => form.setValue("model" as never, model as never, { shouldDirty: true })}
+            />
             <Button
               disabled={isButtonDisabled}
               size="icon"
@@ -130,16 +114,11 @@ function ProjectForm() {
                   : "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-sm hover:from-amber-600 hover:to-orange-700",
               )}
             >
-              {isPending ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : (
-                <ArrowUpIcon className="size-4" />
-              )}
+              {isPending ? <Loader2Icon className="size-4 animate-spin" /> : <ArrowUpIcon className="size-4" />}
             </Button>
           </div>
         </form>
 
-        {/* Template suggestions */}
         <div className="hidden flex-wrap justify-center gap-2 md:flex">
           {PROJECT_TEMPLATES.map((template) => (
             <button

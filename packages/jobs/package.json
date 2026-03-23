@@ -29,7 +29,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@acme/agents": "workspace:*",
     "@acme/db": "workspace:*",
     "@acme/e2b": "workspace:*",
     "@acme/error-handler": "workspace:*",

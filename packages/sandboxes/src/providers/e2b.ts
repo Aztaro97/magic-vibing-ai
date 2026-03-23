@@ -1,4 +1,4 @@
-// packages/sandboxes/src/providers/e2b.ts
+
 
 import { BaseSandbox, type ExecuteResponse } from "deepagents";
 import { Sandbox } from "e2b";
