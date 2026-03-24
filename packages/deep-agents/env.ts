@@ -8,15 +8,10 @@ export const env = createEnv({
 		OPENAI_API_KEY: z.string().min(1),
 		GEMINI_API_KEY: z.string().min(1),
 		POSTGRES_URL: z.string(),
-
 		TAVILY_API_KEY: z.string().min(1),
-
-		// Sandbox — at least one should be set for agents to execute code
 		E2B_API_KEY: z.string().min(1).optional(),
-
 		AGENT_MODEL: z.string().optional().default("qwen3.5"),
 		AGENT_SUBAGENT_MODEL: z.string().optional().default("qwen3.5"),
-
 		LANGCHAIN_TRACING_V2: z.string().optional().default("true"),
 		LANGCHAIN_ENDPOINT: z
 			.string()
