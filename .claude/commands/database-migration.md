@@ -16,6 +16,7 @@ Database schema changes with migration files
 
 - `**/schema.*`
 - `**/types.ts`
+- `migrations/*`
 
 ## Suggested Sequence
 
