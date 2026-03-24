@@ -60,6 +60,8 @@
     "@acme/sandboxes": "workspace:*",
     "@acme/validators": "workspace:*",
     "@langchain/anthropic": "catalog:",
+    "@langchain/community": "^1.1.25",
+    "@langchain/google-genai": "^2.1.26",
     "@langchain/langgraph": "catalog:",
     "@langchain/langgraph-checkpoint": "^1.0.0",
     "@langchain/langgraph-sdk": "^1.7.2",

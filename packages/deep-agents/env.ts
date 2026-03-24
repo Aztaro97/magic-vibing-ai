@@ -7,6 +7,7 @@ export const env = createEnv({
 		ANTHROPIC_API_KEY: z.string().min(1),
 		OPENAI_API_KEY: z.string().min(1),
 		GEMINI_API_KEY: z.string().min(1),
+		MOONSHOT_API_KEY: z.string().min(1).optional(),
 		POSTGRES_URL: z.string(),
 		TAVILY_API_KEY: z.string().min(1),
 		E2B_API_KEY: z.string().min(1).optional(),
@@ -19,6 +20,8 @@ export const env = createEnv({
 			.default("https://api.smith.langchain.com"),
 		LANGCHAIN_API_KEY: z.string().optional(),
 		LANGCHAIN_PROJECT: z.string().optional().default("vibecoding"),
+
+		MODEL_PROVIDER: z.enum(["anthropic", "openai", "google", "moonshot", "ollama"]).optional().default("ollama"),
 	},
 	client: {},
 	experimental__runtimeEnv: {},

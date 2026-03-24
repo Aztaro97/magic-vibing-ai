@@ -1,9 +1,9 @@
 import { ChatOllama } from "@langchain/ollama"
 
 
-type TOllamaModel = "qwen3.5" | "kimi-k2.5"
+type TOllamaModel = "GLM-5" | "Kimi-K2.5" | "MiniMax-M2.5" | "qwen3.5-397B-A17B" | "devstral-2-123B"
 
-export const ollamaModel = ({ modelName = "qwen3.5" }: { modelName?: TOllamaModel }) => {
+export const ollamaModel = ({ modelName = "Kimi-K2.5" }: { modelName?: TOllamaModel }) => {
 	return new ChatOllama({
 		model: modelName,
 		temperature: 0,

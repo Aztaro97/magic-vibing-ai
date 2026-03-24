@@ -14,8 +14,8 @@ import {
 
 import { env } from "../../env";
 
-const MODEL_FULL = env.AGENT_MODEL ?? "qwen3.5";
-const MODEL_CHEAP = env.AGENT_SUBAGENT_MODEL ?? MODEL_FULL;
+const MODEL_FULL = env.AGENT_MODEL;
+const MODEL_CHEAP = env.AGENT_SUBAGENT_MODEL;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ─── 1. CODE AGENT ───────────────────────────────────────────────────────────
