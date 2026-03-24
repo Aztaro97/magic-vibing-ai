@@ -1,6 +1,6 @@
 
 
-import { BaseSandbox, type ExecuteResponse } from "deepagents";
+import { BaseSandbox, type ExecuteResponse, type FileOperationError } from "deepagents";
 import { Sandbox } from "e2b";
 import { env } from "../../env";
 import type { TaskHints } from "../types";
@@ -98,27 +98,27 @@ export class E2BSandboxBackend extends BaseSandbox {
 	// using POSIX shell commands via execute(). No overrides needed unless
 	// you want to use E2B's native file API for performance.
 
-	async uploadFiles(files: Array<[string, Uint8Array]>): Promise<Array<{ path: string; error: string | null }>> {
-		const results: Array<{ path: string; error: string | null }> = [];
+	async uploadFiles(files: Array<[string, Uint8Array]>): Promise<Array<{ path: string; error: FileOperationError | null }>> {
+		const results: Array<{ path: string; error: FileOperationError | null }> = [];
 		for (const [path, content] of files) {
 			try {
 				await this._sandbox.files.write(path, content);
 				results.push({ path, error: null });
-			} catch (err) {
-				results.push({ path, error: String(err) });
+			} catch {
+				results.push({ path, error: "permission_denied" });
 			}
 		}
 		return results;
 	}
 
-	async downloadFiles(paths: string[]): Promise<Array<{ path: string; content: Uint8Array | null; error: string | null }>> {
-		const results: Array<{ path: string; content: Uint8Array | null; error: string | null }> = [];
+	async downloadFiles(paths: string[]): Promise<Array<{ path: string; content: Uint8Array | null; error: FileOperationError | null }>> {
+		const results: Array<{ path: string; content: Uint8Array | null; error: FileOperationError | null }> = [];
 		for (const path of paths) {
 			try {
-				const content = await this._sandbox.files.readBytes(path);
+				const content = await this._sandbox.files.read(path, { format: "bytes" });
 				results.push({ path, content, error: null });
-			} catch (err) {
-				results.push({ path, content: null, error: String(err) });
+			} catch {
+				results.push({ path, content: null, error: "file_not_found" });
 			}
 		}
 		return results;

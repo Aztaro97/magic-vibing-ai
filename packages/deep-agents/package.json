@@ -57,12 +57,14 @@
   },
   "dependencies": {
     "@acme/db": "workspace:*",
+    "@acme/sandboxes": "workspace:*",
     "@acme/validators": "workspace:*",
     "@langchain/anthropic": "catalog:",
     "@langchain/langgraph": "catalog:",
     "@langchain/langgraph-checkpoint": "^1.0.0",
     "@langchain/langgraph-sdk": "^1.7.2",
     "@langchain/ollama": "^1.2.6",
+    "@langchain/tavily": "^1.2.0",
     "deepagents": "^1.6.3",
     "langchain": "catalog:",
     "zod": "catalog:"

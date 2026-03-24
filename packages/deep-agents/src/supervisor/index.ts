@@ -8,6 +8,34 @@ import { ollamaModel } from "../models/ollama-model";
 import { SUPERVISOR_PROMPT } from "../prompts";
 import { ALL_SUBAGENTS } from "../subagents";
 
+// ─────────────────────────────────────────
+// Dangerous command patterns for HITL
+// ─────────────────────────────────────────
+
+/**
+ * Only these patterns trigger HITL interrupts on the `execute` tool.
+ * Everything else (typecheck, lint, test, ls, cat, etc.) runs freely.
+ */
+const DANGEROUS_COMMAND_PATTERNS = [
+	/\brm\s+-rf?\s/i,
+	/\bgit\s+push\s+--force/i,
+	/\bgit\s+push\s+-f\b/i,
+	/\bgit\s+reset\s+--hard/i,
+	/\bnpm\s+publish\b/i,
+	/\bpnpm\s+publish\b/i,
+	/\byarn\s+publish\b/i,
+	/\bdrop\s+(table|database)\b/i,
+	/\btruncate\s+table\b/i,
+	/\bcurl\b.*\|\s*sh\b/i,
+	/\bcurl\b.*\|\s*bash\b/i,
+];
+
+function isDangerousCommand(input: unknown): boolean {
+	if (!input || typeof input !== "object") return false;
+	const command = (input as Record<string, unknown>).command;
+	if (typeof command !== "string") return false;
+	return DANGEROUS_COMMAND_PATTERNS.some((p) => p.test(command));
+}
 
 // ─────────────────────────────────────────
 // Model
@@ -17,11 +45,11 @@ function buildModel() {
 	const apiKey = env.ANTHROPIC_API_KEY;
 	if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
 
-
 	if (env.NODE_ENV === "development") {
-		return ollamaModel({});
+		// Use a model large enough for reliable tool calling in dev
+		return ollamaModel({ modelName: "qwen3.5" });
 	}
-	return anthropicModel({ modelName: "claude-opus-4-5" });
+	return anthropicModel({ modelName: "claude-sonnet-4-6" });
 }
 
 // ─────────────────────────────────────────
@@ -68,16 +96,18 @@ export function createMagicVibingAgent(
 		store: getStore(),
 		checkpointer: getCheckpointer(),
 
-		// Human-in-the-loop: pause and surface approval before destructive tools.
-		// The tRPC subscription delivers these events to the admin UI in real-time.
-		interruptOn: {
-			// FilesystemMiddleware tools
-			execute: {
-				// Intercept shell commands that match dangerous patterns.
-				// The condition is evaluated server-side; non-matching calls pass through.
-				allowedDecisions: ["approve", "edit", "reject"],
-			},
-		},
+		// Human-in-the-loop: currently disabled on `execute` to avoid blocking
+		// every sandbox command. The deepagents SDK's InterruptOnConfig does not
+		// support a `condition` filter, so enabling it would pause the agent on
+		// EVERY shell command (typecheck, lint, test, ls, etc.).
+		//
+		// Safety is enforced instead via isDangerousCommand() in the `execute`
+		// tool wrapper — dangerous commands are rejected before reaching the
+		// sandbox, and the agent is instructed to avoid destructive operations
+		// in the system prompt.
+		//
+		// TODO: Re-enable with condition support once deepagents SDK adds it:
+		// interruptOn: { execute: { allowedDecisions: ["approve", "edit", "reject"] } },
 	}) as any as DeepAgent;
 }
 

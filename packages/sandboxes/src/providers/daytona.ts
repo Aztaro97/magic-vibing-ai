@@ -72,7 +72,7 @@ export class DaytonaSandboxBackend {
 			},
 			envVars: buildEnvVars(hints),
 			autoStopInterval: autoStop,
-			labels: labels as Record<string, string>,
+			labels: labels as unknown as Record<string, string>,
 			target: env.DAYTONA_TARGET,
 		});
 
@@ -89,7 +89,6 @@ export class DaytonaSandboxBackend {
 	 */
 	static async reconnect(sandboxId: string): Promise<DaytonaSandboxBackend> {
 		try {
-			// @ts-expect-error - connect method exists at runtime but is missing in types
 			const sandbox = await (DaytonaSandbox as any).connect(sandboxId);
 			return new DaytonaSandboxBackend(sandbox);
 		} catch (err) {

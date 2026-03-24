@@ -18,6 +18,7 @@ import type { BaseSandbox } from "deepagents";
 
 import { env } from "../env";
 import { classifyTask, pickProvider } from "./classifier";
+import { assertConcurrencyLimit, decrementActiveCount, incrementActiveCount } from "./concurrency";
 import { acquireFromPool } from "./pool";
 import { DaytonaSandboxBackend } from "./providers/daytona";
 import { E2BSandboxBackend } from "./providers/e2b";
@@ -81,6 +82,11 @@ export async function resolveSandbox(
 		return reconnectExisting(existingId, existingProvider, options.orgId!, projectId, acquiredAt);
 	}
 
+	// ── 1b. Enforce per-org concurrency limit ────────────────────────────────
+	if (options.orgId) {
+		await assertConcurrencyLimit(options.orgId);
+	}
+
 	// ── 2. Classify task complexity ──────────────────────────────────────────
 	const complexity = classifyTask(hints);
 	let provider = pickProvider(complexity);
@@ -129,7 +135,7 @@ async function provisionE2B(ctx: ProvisionContext): Promise<ResolvedSandbox> {
 	const { sessionId, hints, complexity, acquiredAt } = ctx;
 
 	// E2B timeout: clamp to SANDBOX_TIMEOUT_SECONDS or task estimate + buffer
-	const configuredTimeout = env.SANDBOX_TIMEOUT_SECONDS ?? 300;
+	const configuredTimeout = Number(env.SANDBOX_TIMEOUT_SECONDS ?? 300);
 	const taskTimeout = hints.estimatedDurationSeconds
 		? Math.min(hints.estimatedDurationSeconds * 1.5, configuredTimeout)
 		: configuredTimeout;
