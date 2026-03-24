@@ -8,8 +8,9 @@
 // makes tool calls inspectable in LangSmith traces.
 
 import { tool } from "@langchain/core/tools";
+import { TavilySearch } from "@langchain/tavily";
 import { z } from "zod";
-
+import { env } from "../../env";
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared across all agents — monorepo-aware execution helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -574,6 +575,36 @@ export const checkAuthGuard = tool(
 		}),
 	}
 );
+
+export const internetSearch = tool(
+	async ({
+		query,
+		maxResults = 5,
+		includeRawContent = false,
+	}: {
+		query: string;
+		maxResults?: number;
+		includeRawContent?: boolean;
+	}) => {
+		const tavilySearch = new TavilySearch({
+			maxResults,
+			tavilyApiKey: env.TAVILY_API_KEY,
+			includeRawContent,
+		});
+		return await tavilySearch._call({ query });
+	},
+	{
+		name: "internet_search",
+		description: "Run an internet search to find technical documentation, Expo SDK updates, or troubleshoot errors.",
+		schema: z.object({
+			query: z.string().describe("The research query."),
+			depth: z.enum(["basic", "advanced"]).optional().describe("Search depth."),
+			maxResults: z.number().optional().default(5),
+			includeRawContent: z.boolean().optional().default(false),
+		}),
+	},
+);
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

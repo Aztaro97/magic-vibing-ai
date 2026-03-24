@@ -9,6 +9,8 @@ export const env = createEnv({
 		GEMINI_API_KEY: z.string().min(1),
 		POSTGRES_URL: z.string(),
 
+		TAVILY_API_KEY: z.string().min(1),
+
 		// Sandbox — at least one should be set for agents to execute code
 		E2B_API_KEY: z.string().min(1).optional(),
 
