@@ -7,7 +7,7 @@
 // window instead of raw shell strings — which reduces hallucinated commands and
 // makes tool calls inspectable in LangSmith traces.
 
-import { tool } from "langchain";
+import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -330,7 +330,7 @@ export const planTestSuite = tool(
 	}) => {
 		return JSON.stringify({
 			targetFile,
-			testFile: targetFile.replace(/\.tsx?$/, ".test.$1").replace(/src\//, "src/__tests__/"),
+			testFile: targetFile.replace(/\.(ts|tsx)$/, ".test.$1").replace(/src\//, "src/__tests__/"),
 			symbols: exportedSymbols,
 			totalCases: testCases.length,
 			happyPath: testCases.filter((t) => t.type === "happy").length,

@@ -13,18 +13,18 @@
 import type { SubAgent } from "deepagents";
 
 import {
-	pnpmScript,
-	findSymbol,
-	readBeforeEdit,
-	scaffoldTrpcProcedure,
-	scaffoldDrizzleTable,
-	parseStackTrace,
-	stateHypothesis,
-	planTestSuite,
-	parseTestResults,
-	scaffoldJsdoc,
-	recordFinding,
 	checkAuthGuard,
+	findSymbol,
+	parseStackTrace,
+	parseTestResults,
+	planTestSuite,
+	pnpmScript,
+	readBeforeEdit,
+	recordFinding,
+	scaffoldDrizzleTable,
+	scaffoldJsdoc,
+	scaffoldTrpcProcedure,
+	stateHypothesis,
 } from "./tools";
 
 import { env } from "../../env";
@@ -39,7 +39,7 @@ import { env } from "../../env";
 // mode without significant quality loss.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MODEL_FULL = env.AGENT_MODEL ?? "claude-sonnet-4-6";
+const MODEL_FULL = env.AGENT_MODEL ?? "qwen3.5";
 const MODEL_CHEAP = env.AGENT_SUBAGENT_MODEL ?? MODEL_FULL;
 
 // ─────────────────────────────────────────────────────────────────────────────

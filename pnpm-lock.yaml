@@ -782,6 +782,9 @@ importers:
       '@acme/db':
         specifier: workspace:*
         version: link:../db
+      '@acme/sandboxes':
+        specifier: workspace:*
+        version: link:../sandboxes
       '@acme/validators':
         specifier: workspace:*
         version: link:../validators

@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "@acme/db": "workspace:*",
+    "@acme/sandboxes": "workspace:*",
     "@acme/validators": "workspace:*",
     "@langchain/anthropic": "catalog:",
     "@langchain/langgraph": "catalog:",

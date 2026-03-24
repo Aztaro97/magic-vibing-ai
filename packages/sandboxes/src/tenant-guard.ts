@@ -23,7 +23,6 @@ export async function assertSandboxOwnership(
 	projectId: string,
 ): Promise<void> {
 	// Use the raw Daytona SDK to read the sandbox metadata
-	// @ts-expect-error - connect method exists at runtime but is missing in types
 	const sandbox = await (DaytonaSandbox as any).connect(sandboxId);
 	const sdk = sandbox.sandbox;
 
