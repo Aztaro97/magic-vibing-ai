@@ -5,7 +5,7 @@ description: Development conventions and patterns for magic-vibing-ai. TypeScrip
 
 # Magic Vibing Ai Conventions
 
-> Generated from [Aztaro97/magic-vibing-ai](https://github.com/Aztaro97/magic-vibing-ai) on 2026-03-23
+> Generated from [Aztaro97/magic-vibing-ai](https://github.com/Aztaro97/magic-vibing-ai) on 2026-03-24
 
 ## Overview
 
@@ -28,7 +28,7 @@ Activate this skill when:
 
 ## Commit Conventions
 
-Follow these commit message conventions based on 54 analyzed commits.
+Follow these commit message conventions based on 74 analyzed commits.
 
 ### Commit Style: Conventional Commits
 
@@ -41,7 +41,7 @@ Follow these commit message conventions based on 54 analyzed commits.
 
 ### Message Guidelines
 
-- Average message length: ~111 characters
+- Average message length: ~104 characters
 - Keep first line concise and descriptive
 - Use imperative mood ("Add feature" not "Added feature")
 
@@ -49,7 +49,13 @@ Follow these commit message conventions based on 54 analyzed commits.
 *Commit message example*
 
 ```text
-refactor: remove redundant file path comments and reformat sandbox cleanup job functions
+feat: Add Moonshot, Gemini, and OpenAI model integrations, introducing a configurable `MODEL_PROVIDER` environment variable for selection
+```
+
+*Commit message example*
+
+```text
+refactor: Use typed `env` for `E2B_API_KEY` in deep-agents, mark `E2B_API_KEY` as optional, and rename E2B Expo template to `expo-web-app`
 ```
 
 *Commit message example*
@@ -67,31 +73,25 @@ chore: Remove the `agents` package and update `pnpm-lock.yaml` and `langgraph.js
 *Commit message example*
 
 ```text
-feat: Introduce agent session management with new database tables and UI to support initial prompts and models
+feat: Integrate E2B sandbox for agent code execution and update default LLM models to qwen3.5
 ```
 
 *Commit message example*
 
 ```text
-Merge pull request #7 from Aztaro97/feature/migrate-to-langraph
+Merge pull request #10 from Aztaro97/ecc-tools/magic-vibing-ai-1774265769715
 ```
 
 *Commit message example*
 
 ```text
-docs: Remove migration plan and architecture design documents
+feat: add magic-vibing-ai ECC bundle (.claude/commands/refactoring.md)
 ```
 
 *Commit message example*
 
 ```text
-refactor: consolidate Tailwind CSS configuration and update agent state schemas
-```
-
-*Commit message example*
-
-```text
-feat: Migrate agent infrastructure from Inngest to LangGraph and remove the jobs package
+feat: add magic-vibing-ai ECC bundle (.claude/commands/feature-development.md)
 ```
 
 ## Architecture
@@ -243,7 +243,7 @@ These workflows were detected from analyzing commit patterns.
 
 Database schema changes with migration files
 
-**Frequency**: ~5 times per month
+**Frequency**: ~4 times per month
 
 **Steps**:
 1. Create migration file
@@ -253,19 +253,20 @@ Database schema changes with migration files
 **Files typically involved**:
 - `**/schema.*`
 - `**/types.ts`
+- `migrations/*`
 
 **Example commit sequence**:
 ```
-setting up authentification
-refactor: remove unused sign-in and sign-up pages; update dashboard layout to include session validation and user data; update package dependencies for react-hook-form and Radix UI components
-feat: add stripe, organization, invitaion and subscription schema
+feat(agents): Implement LangGraph migration Phase 3 - checkpointing and graph compilation
+feat: Migrate agent infrastructure from Inngest to LangGraph and remove the jobs package
+feat: Implement `@t3-oss/env-nextjs` for environment variable management and standardize module import paths
 ```
 
 ### Feature Development
 
 Standard feature implementation workflow
 
-**Frequency**: ~14 times per month
+**Frequency**: ~19 times per month
 
 **Steps**:
 1. Add feature implementation
@@ -273,24 +274,24 @@ Standard feature implementation workflow
 3. Update documentation
 
 **Files typically involved**:
-- `apps/admin/src/app/(dashboard)/*`
 - `apps/admin/src/app/api/inngest/*`
-- `apps/admin/src/app/*`
+- `apps/admin/src/app/api/pusher/auth/*`
+- `apps/admin/src/components/projects/messages-container/*`
 - `**/*.test.*`
 - `**/api/**`
 
 **Example commit sequence**:
 ```
-chore: add API keys to .env.example, update pnpm-lock.yaml with new workspace dependencies, and modify turbo.json to include new environment variables
-chore: refactor hello-word-fn.ts to comment out unused code, update compile_page.sh for Expo server setup, and modify e2b.Dockerfile to install Expo CLI and create Expo app
-chore: update package.json with new template build and publish scripts for Next.js and Expo; modify hello-word-fn.ts to change sandbox host port; update e2b configuration to create sandbox with specific app name; remove obsolete compile_page.sh, e2b.Dockerfile, and e2b.toml files
+feat: Implement real-time streaming for agent output using Pusher and configure the Inngest signing key
+Merge pull request #3 from Aztaro97/feature/config-push
+feat: Implement Gemini LLM integration, including new models, environment variables, and dependency updates
 ```
 
 ### Refactoring
 
 Code refactoring and cleanup workflow
 
-**Frequency**: ~7 times per month
+**Frequency**: ~5 times per month
 
 **Steps**:
 1. Ensure tests pass before refactor
@@ -302,193 +303,173 @@ Code refactoring and cleanup workflow
 
 **Example commit sequence**:
 ```
-refactor: remove unused sign-in and sign-up pages; update dashboard layout to include session validation and user data; update package dependencies for react-hook-form and Radix UI components
-feat: add stripe, organization, invitaion and subscription schema
-feat: update project and message routers; add new dependencies for prismjs and react-resizable-panels; enhance page component with error and hydration boundaries
+refactor: consolidate Tailwind CSS configuration and update agent state schemas
+docs: Remove migration plan and architecture design documents
+Merge pull request #7 from Aztaro97/feature/migrate-to-langraph
 ```
 
-### Add Or Modify Database Table
+### Add Llm Provider Integration
 
-Adds a new table or modifies the schema in the database, including migrations and updating related types and API routers.
+Integrate a new LLM provider (e.g., Gemini, Moonshot, OpenAI) into the agent system, making it selectable via environment variables and updating dependencies.
 
 **Frequency**: ~2 times per month
 
 **Steps**:
-1. Edit or create new migration SQL file in packages/db/drizzle/
-2. Update snapshot and journal files in packages/db/drizzle/meta/
-3. Modify packages/db/src/schema.ts and related entity files (e.g., project.ts, message.ts, llm-key.ts, fragment.ts, agents.ts)
-4. Update API routers in packages/api/src/router/ if needed
-5. Update types in packages/db/src/types.ts if needed
-
-**Files typically involved**:
-- `packages/db/drizzle/*.sql`
-- `packages/db/drizzle/meta/*.json`
-- `packages/db/drizzle/meta/_journal.json`
-- `packages/db/src/schema.ts`
-- `packages/db/src/*.ts`
-- `packages/api/src/router/*.ts`
-- `packages/db/src/types.ts`
-
-**Example commit sequence**:
-```
-Edit or create new migration SQL file in packages/db/drizzle/
-Update snapshot and journal files in packages/db/drizzle/meta/
-Modify packages/db/src/schema.ts and related entity files (e.g., project.ts, message.ts, llm-key.ts, fragment.ts, agents.ts)
-Update API routers in packages/api/src/router/ if needed
-Update types in packages/db/src/types.ts if needed
-```
-
-### Add Or Update Api Endpoint
-
-Adds or updates an API endpoint, including route file creation/modification, updating router index, and writing related tests or types.
-
-**Frequency**: ~2 times per month
-
-**Steps**:
-1. Create or modify route file in apps/admin/src/app/api/ or packages/api/src/router/
-2. Update router index or root file if necessary
-3. Update or create related test files if present
-4. Update frontend hooks or components if API shape changes
-
-**Files typically involved**:
-- `apps/admin/src/app/api/**/*.ts`
-- `packages/api/src/router/*.ts`
-- `packages/api/src/root.ts`
-- `apps/admin/src/hooks/**/*.ts`
-- `apps/admin/src/components/**/*.tsx`
-
-**Example commit sequence**:
-```
-Create or modify route file in apps/admin/src/app/api/ or packages/api/src/router/
-Update router index or root file if necessary
-Update or create related test files if present
-Update frontend hooks or components if API shape changes
-```
-
-### Add New Llm Model Or Provider
-
-Integrates a new LLM model or provider, updating model constants, environment variables, and related package dependencies.
-
-**Frequency**: ~1 times per month
-
-**Steps**:
-1. Add or update model in packages/agents/src/models/ or packages/deep-agents/src/models/
-2. Update model constants in packages/agents/src/constants/index.ts or packages/deep-agents/src/constants/index.ts
-3. Add necessary environment variables in .env.example and env.ts files
-4. Update package.json dependencies if new SDKs are needed
-5. Update frontend model selection components
+1. Add or update environment variable in .env.example
+2. Update or create provider-specific model file in packages/deep-agents/src/models/
+3. Update packages/deep-agents/env.ts to handle new env vars
+4. Update packages/deep-agents/package.json for dependencies
+5. Update subagents/supervisor logic to support new model
+6. Update pnpm-lock.yaml and turbo.json for dependency tracking
 
 **Files typically involved**:
 - `.env.example`
-- `packages/agents/src/models/*.ts`
-- `packages/agents/src/constants/index.ts`
-- `packages/deep-agents/src/models/*.ts`
-- `packages/deep-agents/src/constants/index.ts`
-- `packages/agents/env.ts`
 - `packages/deep-agents/env.ts`
-- `packages/agents/package.json`
 - `packages/deep-agents/package.json`
-- `apps/admin/src/components/forms/model-select-form.tsx`
-- `apps/admin/src/components/forms/setting-model-select.tsx`
+- `packages/deep-agents/src/models/*.ts`
+- `packages/deep-agents/src/subagents/index.ts`
+- `packages/deep-agents/src/supervisor/index.ts`
+- `pnpm-lock.yaml`
+- `turbo.json`
 
 **Example commit sequence**:
 ```
-Add or update model in packages/agents/src/models/ or packages/deep-agents/src/models/
-Update model constants in packages/agents/src/constants/index.ts or packages/deep-agents/src/constants/index.ts
-Add necessary environment variables in .env.example and env.ts files
-Update package.json dependencies if new SDKs are needed
-Update frontend model selection components
+Add or update environment variable in .env.example
+Update or create provider-specific model file in packages/deep-agents/src/models/
+Update packages/deep-agents/env.ts to handle new env vars
+Update packages/deep-agents/package.json for dependencies
+Update subagents/supervisor logic to support new model
+Update pnpm-lock.yaml and turbo.json for dependency tracking
 ```
 
-### Feature Development Ui Api Sync
+### Ecc Bundle Skill Or Command
 
-Implements a new feature end-to-end, touching UI components, hooks, API routers, and sometimes database schema, ensuring all layers are updated together.
+Add a new ECC (Extended Cognitive Component) bundle, skill, or command for the magic-vibing-ai agent, including documentation, YAML config, and command definitions.
 
 **Frequency**: ~2 times per month
 
 **Steps**:
-1. Create or update UI components in apps/admin/src/components/
-2. Update or add hooks in apps/admin/src/hooks/
-3. Modify or add API router files in packages/api/src/router/
-4. Update or add database schema/migrations if new data is needed
-5. Update package.json or pnpm-lock.yaml if dependencies are added
+1. Add or update command markdown in .claude/commands/
+2. Add or update skill markdown in .agents/skills/magic-vibing-ai/ or .claude/skills/
+3. Add or update YAML config in .agents/skills/magic-vibing-ai/agents/ or .claude/homunculus/instincts/inherited/
+4. Update .claude/ecc-tools.json or .codex/config.toml as needed
+5. Update .codex/agents/*.toml and .codex/AGENTS.md as needed
 
 **Files typically involved**:
+- `.claude/commands/*.md`
+- `.claude/skills/magic-vibing-ai/SKILL.md`
+- `.agents/skills/magic-vibing-ai/SKILL.md`
+- `.agents/skills/magic-vibing-ai/agents/*.yaml`
+- `.claude/homunculus/instincts/inherited/*.yaml`
+- `.claude/ecc-tools.json`
+- `.claude/identity.json`
+- `.codex/agents/*.toml`
+- `.codex/AGENTS.md`
+- `.codex/config.toml`
+
+**Example commit sequence**:
+```
+Add or update command markdown in .claude/commands/
+Add or update skill markdown in .agents/skills/magic-vibing-ai/ or .claude/skills/
+Add or update YAML config in .agents/skills/magic-vibing-ai/agents/ or .claude/homunculus/instincts/inherited/
+Update .claude/ecc-tools.json or .codex/config.toml as needed
+Update .codex/agents/*.toml and .codex/AGENTS.md as needed
+```
+
+### Feature Development Ui Api Db
+
+Develop a new feature spanning UI, API, and database, including schema changes, new UI components, and API routes.
+
+**Frequency**: ~2 times per month
+
+**Steps**:
+1. Add or update UI components and pages in apps/admin/src/
+2. Add or update API routes in packages/api/src/router/
+3. Add or update database schema and migration files in packages/db/
+4. Update env files and package.json as needed
+5. Update pnpm-lock.yaml and turbo.json for dependencies
+
+**Files typically involved**:
+- `apps/admin/src/app/(dashboard)/**/*.tsx`
 - `apps/admin/src/components/**/*.tsx`
 - `apps/admin/src/hooks/**/*.ts`
-- `packages/api/src/router/*.ts`
-- `packages/db/drizzle/*.sql`
+- `packages/api/src/router/**/*.ts`
+- `packages/db/drizzle/**/*.sql`
 - `packages/db/drizzle/meta/*.json`
 - `packages/db/src/schema.ts`
+- `packages/deep-agents/env.ts`
+- `packages/deep-agents/package.json`
+- `pnpm-lock.yaml`
+- `turbo.json`
+
+**Example commit sequence**:
+```
+Add or update UI components and pages in apps/admin/src/
+Add or update API routes in packages/api/src/router/
+Add or update database schema and migration files in packages/db/
+Update env files and package.json as needed
+Update pnpm-lock.yaml and turbo.json for dependencies
+```
+
+### Add Error Handler Package
+
+Introduce or update a centralized error-handler package and integrate it into UI and backend for consistent error display and tracking.
+
+**Frequency**: ~2 times per month
+
+**Steps**:
+1. Create or update packages/error-handler/ with client/server/shared code
+2. Integrate error notification UI in apps/admin/src/components/projects/
+3. Update package.json and pnpm-lock.yaml for dependencies
+4. Update or add usage in backend (e.g., packages/api/src/router/)
+
+**Files typically involved**:
+- `packages/error-handler/**`
+- `apps/admin/src/components/projects/error-notification-container.tsx`
+- `apps/admin/src/components/projects/project-view/index.tsx`
+- `packages/api/src/router/message.ts`
 - `package.json`
+- `pnpm-lock.yaml`
+- `pnpm-workspace.yaml`
+
+**Example commit sequence**:
+```
+Create or update packages/error-handler/ with client/server/shared code
+Integrate error notification UI in apps/admin/src/components/projects/
+Update package.json and pnpm-lock.yaml for dependencies
+Update or add usage in backend (e.g., packages/api/src/router/)
+```
+
+### Add Realtime Streaming With Pusher
+
+Add or update real-time streaming for agent output using Pusher, including backend integration, frontend hooks, and environment/config updates.
+
+**Frequency**: ~2 times per month
+
+**Steps**:
+1. Add or update Pusher client/server code in packages/pusher/
+2. Update or add streaming hooks and UI in apps/admin/src/hooks/ and apps/admin/src/components/projects/messages-container/
+3. Update API and jobs logic to emit events
+4. Add or update environment variables in .env.example
+5. Update package.json and pnpm-lock.yaml for dependencies
+
+**Files typically involved**:
+- `packages/pusher/**`
+- `apps/admin/src/hooks/use-streaming-message.ts`
+- `apps/admin/src/components/projects/messages-container/streaming-message.tsx`
+- `apps/admin/src/components/projects/messages-container/index.tsx`
+- `packages/api/package.json`
+- `packages/jobs/src/functions/code-agent-fn.ts`
+- `.env.example`
 - `pnpm-lock.yaml`
 
 **Example commit sequence**:
 ```
-Create or update UI components in apps/admin/src/components/
-Update or add hooks in apps/admin/src/hooks/
-Modify or add API router files in packages/api/src/router/
-Update or add database schema/migrations if new data is needed
-Update package.json or pnpm-lock.yaml if dependencies are added
-```
-
-### Add Or Update Shared Package
-
-Creates or updates a shared package (e.g., error-handler, validators), including package.json, implementation files, and updating references in other packages.
-
-**Frequency**: ~1 times per month
-
-**Steps**:
-1. Create or update package in packages/<name>/
-2. Update or add implementation files (src/)
-3. Update or add types/config files (tsconfig.json, eslint.config.js)
-4. Update package.json for dependencies
-5. Update references/imports in other packages or apps
-
-**Files typically involved**:
-- `packages/*/package.json`
-- `packages/*/src/**/*.ts`
-- `packages/*/tsconfig.json`
-- `packages/*/eslint.config.js`
-- `apps/admin/package.json`
-- `apps/admin/src/components/**/*.tsx`
-
-**Example commit sequence**:
-```
-Create or update package in packages/<name>/
-Update or add implementation files (src/)
-Update or add types/config files (tsconfig.json, eslint.config.js)
-Update package.json for dependencies
-Update references/imports in other packages or apps
-```
-
-### Update Tailwind Or Ui Theme
-
-Updates Tailwind CSS configuration or global UI theme, including base styles and related config files.
-
-**Frequency**: ~1 times per month
-
-**Steps**:
-1. Edit Tailwind config files (tooling/tailwind/*.ts, apps/admin/tailwind.config.ts)
-2. Update global CSS (apps/admin/src/app/globals.css, tooling/tailwind/src/styles.css)
-3. Update related UI components if needed
-4. Update package.json or pnpm-lock.yaml if dependencies change
-
-**Files typically involved**:
-- `tooling/tailwind/*.ts`
-- `apps/admin/tailwind.config.ts`
-- `apps/admin/src/app/globals.css`
-- `tooling/tailwind/src/styles.css`
-- `packages/ui/src/*.tsx`
-- `package.json`
-- `pnpm-lock.yaml`
-
-**Example commit sequence**:
-```
-Edit Tailwind config files (tooling/tailwind/*.ts, apps/admin/tailwind.config.ts)
-Update global CSS (apps/admin/src/app/globals.css, tooling/tailwind/src/styles.css)
-Update related UI components if needed
-Update package.json or pnpm-lock.yaml if dependencies change
+Add or update Pusher client/server code in packages/pusher/
+Update or add streaming hooks and UI in apps/admin/src/hooks/ and apps/admin/src/components/projects/messages-container/
+Update API and jobs logic to emit events
+Add or update environment variables in .env.example
+Update package.json and pnpm-lock.yaml for dependencies
 ```
 
 
