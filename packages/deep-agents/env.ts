@@ -7,16 +7,12 @@ export const env = createEnv({
 		ANTHROPIC_API_KEY: z.string().min(1),
 		OPENAI_API_KEY: z.string().min(1),
 		GEMINI_API_KEY: z.string().min(1),
+		MOONSHOT_API_KEY: z.string().min(1).optional(),
 		POSTGRES_URL: z.string(),
-
 		TAVILY_API_KEY: z.string().min(1),
-
-		// Sandbox — at least one should be set for agents to execute code
 		E2B_API_KEY: z.string().min(1).optional(),
-
 		AGENT_MODEL: z.string().optional().default("qwen3.5"),
 		AGENT_SUBAGENT_MODEL: z.string().optional().default("qwen3.5"),
-
 		LANGCHAIN_TRACING_V2: z.string().optional().default("true"),
 		LANGCHAIN_ENDPOINT: z
 			.string()
@@ -24,6 +20,8 @@ export const env = createEnv({
 			.default("https://api.smith.langchain.com"),
 		LANGCHAIN_API_KEY: z.string().optional(),
 		LANGCHAIN_PROJECT: z.string().optional().default("vibecoding"),
+
+		MODEL_PROVIDER: z.enum(["anthropic", "openai", "google", "moonshot", "ollama"]).optional().default("ollama"),
 	},
 	client: {},
 	experimental__runtimeEnv: {},

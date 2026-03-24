@@ -1,5 +1,6 @@
-import { createMagicVibingAgent } from "./supervisor";
+import { env } from "../env";
 import { LazyE2BSandbox } from "./sandbox/lazy-e2b";
+import { createMagicVibingAgent } from "./supervisor";
 
 export {
 	buildStoreNamespace,
@@ -26,7 +27,7 @@ export {
 export { createMagicVibingAgent } from "./supervisor";
 export {
 	transformAgentStream,
-	type TransformResult,
+	type TransformResult
 } from "./supervisor/stream-transformer";
 export type {
 	AgentEvent,
@@ -41,7 +42,7 @@ export type {
 // When E2B_API_KEY is available, wire a lazy sandbox so the LangGraph dev
 // server graph has access to the `execute` tool (shell commands in E2B).
 // Without this, the graph falls back to StoreBackend (filesystem-only).
-const sandbox = process.env.E2B_API_KEY ? new LazyE2BSandbox() : undefined;
+const sandbox = env.E2B_API_KEY ? new LazyE2BSandbox() : undefined;
 
 export const graph = createMagicVibingAgent({ sandbox });
 

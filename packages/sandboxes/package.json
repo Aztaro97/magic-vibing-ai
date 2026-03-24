@@ -45,9 +45,9 @@
     "with-env": "dotenv -e ../../.env --",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "template:build:nextjs": "e2b template build --dockerfile sandbox-templates/nextjs/e2b.Dockerfile --name nextjs-sandbox",
-    "template:build:expo": "e2b template build --dockerfile sandbox-templates/expo/e2b.Dockerfile --name expo-sandbox",
+    "template:build:expo": "e2b template build --dockerfile sandbox-templates/expo/e2b.Dockerfile --name expo-web-app",
     "template:publish:nextjs": "e2b template publish nextjs-sandbox",
-    "template:publish:expo": "e2b template publish expo-sandbox"
+    "template:publish:expo": "e2b template publish expo-web-app"
   },
   "dependencies": {
     "@acme/validators": "workspace:*",

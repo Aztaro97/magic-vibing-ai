@@ -13,7 +13,7 @@ import type { TaskHints } from "../types";
 
 const TEMPLATES = {
 	nextjs: "nextjs-sandbox",   // Node 20, pnpm, TypeScript, Next.js deps
-	expo: "expo-sandbox",     // Node 20, pnpm, Expo, React Native deps
+	expo: "expo-web-app",     // Node 20, pnpm, Expo, React Native deps
 	default: "base",             // E2B base image with Node 20
 } as const;
 

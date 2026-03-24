@@ -4,9 +4,13 @@ import { createDeepAgent, StoreBackend } from "deepagents";
 import { env } from "../../env";
 import { getCheckpointer, getStore } from "../memory";
 import { anthropicModel } from "../models/anthropic-model";
+import { googleGeminiModel } from "../models/gemini-model";
+import { moonshotModel } from "../models/moonshot-model";
 import { ollamaModel } from "../models/ollama-model";
+import { openaiModel } from "../models/openai-model";
 import { SUPERVISOR_PROMPT } from "../prompts";
 import { ALL_SUBAGENTS } from "../subagents";
+
 
 // ─────────────────────────────────────────
 // Dangerous command patterns for HITL
@@ -42,14 +46,20 @@ function isDangerousCommand(input: unknown): boolean {
 // ─────────────────────────────────────────
 
 function buildModel() {
-	const apiKey = env.ANTHROPIC_API_KEY;
-	if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
-
-	if (env.NODE_ENV === "development") {
-		// Use a model large enough for reliable tool calling in dev
-		return ollamaModel({ modelName: "qwen3.5" });
+	switch (env.MODEL_PROVIDER) {
+		case "google":
+			return googleGeminiModel({ modelName: "gemini-3.1-pro-preview" });
+		case "anthropic":
+			return anthropicModel({ modelName: "claude-sonnet-4-6" });
+		case "moonshot":
+			return moonshotModel({ modelName: "kimi-k2.5" });
+		case "openai":
+			return openaiModel({ modelName: "gpt-5.4" });
+		case "ollama":
+			return ollamaModel({ modelName: "Kimi-K2.5" });
+		default:
+			throw new Error("Invalid MODEL_PROVIDER");
 	}
-	return anthropicModel({ modelName: "claude-sonnet-4-6" });
 }
 
 // ─────────────────────────────────────────
