@@ -1,5 +1,10 @@
 import type { SubAgent } from "deepagents";
 
+import type { SandboxProvider } from "@acme/sandboxes";
+
+// Re-export so consumers can import from @acme/deep-agents/types
+export type { SandboxProvider };
+
 // ─────────────────────────────────────────
 // Agent run event stream
 // ─────────────────────────────────────────
@@ -53,8 +58,6 @@ export interface TodoItem {
   done: boolean;
   priority: "high" | "medium" | "low";
 }
-
-export type SandboxProvider = "e2b" | "daytona";
 
 export interface RunAgentInput {
   projectId: string;

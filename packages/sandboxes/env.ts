@@ -8,7 +8,7 @@ export const env = createEnv({
 		OPENAI_API_KEY: z.string().min(1),
 		GEMINI_API_KEY: z.string().min(1),
 		POSTGRES_URL: z.string(),
-		E2B_API_KEY: z.string().min(1),
+		E2B_API_KEY: z.string().min(1).optional(),
 		SANDBOX_TIMEOUT_SECONDS: z.string().optional().default("300"),
 		DAYTONA_API_KEY: z.string().min(1).optional(),
 		DAYTONA_AUTO_STOP_INTERVAL: z.string().optional().default("15"),

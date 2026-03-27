@@ -68,21 +68,28 @@ function buildModel() {
 
 export interface SupervisorOptions {
 	/**
-	 * Sandbox backend injected by @acme/sandboxes router.
-	 * When provided, agents gain the `execute` tool for shell commands.
-	 * When omitted, agents run without sandbox access (filesystem-only mode).
+	 * Sandbox backend injected by the `@acme/sandboxes` lifecycle manager.
+	 *
+	 * Supports both E2B (fast, ephemeral) and Daytona (stateful, persistent)
+	 * providers. The sandbox is resolved dynamically — either:
+	 *   - Injected by the API router via `resolveProjectSandbox()`, or
+	 *   - Lazy-provisioned by `LazySandbox` for the LangGraph dev server.
+	 *
+	 * When provided, agents gain `execute`, `read_file`, `write_file`,
+	 * `edit_file`, `uploadFiles`, and `downloadFiles` tools.
+	 * When omitted, agents run in filesystem-only mode (StoreBackend).
 	 */
 	sandbox?: BaseSandbox;
 }
 
 /**
  * Creates and returns a compiled DeepAgent graph wired with:
- * - Claude Sonnet 4.6 as the model
+ * - Configurable LLM (Anthropic, OpenAI, Gemini, Moonshot, Ollama)
  * - Custom Magic Vibing supervisor system prompt
- * - All 5 sub-agents (code, debug, test, doc, review)
- * - StoreBackend for cross-session filesystem persistence
+ * - All 6 sub-agents (research, code, debug, test, doc, review)
+ * - Sandbox backend from @acme/sandboxes (E2B or Daytona) or StoreBackend fallback
  * - MemorySaver checkpointer for HITL and resume support
- * - HITL gates on destructive operations (rm, publish, force-push)
+ * - Safety gates on destructive operations (rm, publish, force-push)
  *
  * The returned agent is a compiled LangGraph graph. Use `.stream()` to
  * get an async iterator of StreamEvent objects for SSE delivery.
