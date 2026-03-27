@@ -142,6 +142,9 @@ async function provisionE2B(ctx: ProvisionContext): Promise<ResolvedSandbox> {
 
 	const backend = await E2BSandboxBackend.create(hints, Math.ceil(taskTimeout));
 
+	// Track concurrency for the org
+	if (ctx.orgId) incrementActiveCount(ctx.orgId);
+
 	console.info(
 		`[sandbox-router] ${sessionId}: E2B sandbox provisioned in ${Date.now() - acquiredAt}ms ` +
 		`(id=${backend.id}, tier=${complexity.tier})`,
@@ -165,6 +168,8 @@ async function provisionDaytona(
 	// ── 4a. Try the pool first ───────────────────────────────────────────────
 	const pooled = await acquireFromPool(projectId);
 	if (pooled) {
+		if (ctx.orgId) incrementActiveCount(ctx.orgId);
+
 		console.info(
 			`[sandbox-router] ${sessionId}: Daytona sandbox resumed from pool in ` +
 			`${Date.now() - acquiredAt}ms (id=${pooled.id})`,
@@ -185,6 +190,8 @@ async function provisionDaytona(
 		projectId,
 		sessionId,
 	});
+
+	if (ctx.orgId) incrementActiveCount(ctx.orgId);
 
 	console.info(
 		`[sandbox-router] ${sessionId}: Daytona sandbox created in ` +
@@ -271,3 +278,4 @@ function log(
 		);
 	}
 }
+

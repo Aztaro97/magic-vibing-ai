@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import type { NewAgentSession } from "@acme/db/agents";
 import type { AgentEvent, TransformResult } from "@acme/deep-agents";
+import type { LifecycleResult } from "@acme/sandboxes/types";
 import { db } from "@acme/db";
 import {
   agentEvent as agentEventTable,
@@ -15,7 +16,12 @@ import {
   createMagicVibingAgent,
   transformAgentStream,
 } from "@acme/deep-agents";
-import { resolveSandbox } from "@acme/sandboxes/router";
+import {
+  destroyProjectSandbox,
+  pauseProjectSandbox,
+  releaseSandbox,
+  resolveProjectSandbox,
+} from "@acme/sandboxes/lifecycle";
 
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -132,18 +138,17 @@ export const agentRouter = createTRPCRouter({
         }
       }
 
-      // ── Acquire sandbox ───────────────────────────────────────────────────
+      // ── Acquire sandbox via project lifecycle manager ──────────────────────
       const startedAt = Date.now();
-      const sandbox = await resolveSandbox({
+      const sandbox: LifecycleResult | null = await resolveProjectSandbox({
         projectId,
         sessionId,
+        orgId: user.id,
         hints: {
           description: userMessage,
           provider: sandboxProvider,
         },
-        existingId: session.sandboxId ?? undefined,
-        existingProvider:
-          (session.sandboxProvider as "e2b" | "daytona") ?? undefined,
+        userTier: "FREE", // TODO: derive from user subscription
       });
 
       if (sandbox?.id) {
@@ -265,13 +270,22 @@ export const agentRouter = createTRPCRouter({
         seq++;
         yield tracked(String(seq), errorEvent);
       } finally {
-        // Only close sandbox when the agent run is truly done or errored.
-        // Keep it alive when paused for HITL so it can be resumed.
-        if (sandbox?.shouldClose && !streamResult.interrupted) {
-          const instance = sandbox.instance as unknown as {
-            close?: () => Promise<void>;
-          };
-          instance.close?.().catch(console.error);
+        // Lifecycle-aware sandbox cleanup:
+        // - HITL pause: keep sandbox alive, mark project as "paused"
+        // - Done/error: destroy sandbox, clear project state
+        if (sandbox) {
+          if (streamResult.interrupted) {
+            await pauseProjectSandbox(projectId, sandbox, user.id).catch(
+              console.error,
+            );
+          } else if (sandbox.shouldClose) {
+            await destroyProjectSandbox(projectId, sandbox, user.id).catch(
+              console.error,
+            );
+          } else {
+            // Pooled/reconnected sandbox — just release concurrency
+            releaseSandbox(user.id);
+          }
         }
       }
     }),

@@ -14,7 +14,6 @@ import type { TaskHints } from "../types";
 const TEMPLATES = {
 	nextjs: "nextjs-sandbox",   // Node 20, pnpm, TypeScript, Next.js deps
 	expo: "expo-web-app",     // Node 20, pnpm, Expo, React Native deps
-	default: "base",             // E2B base image with Node 20
 } as const;
 
 type TemplateKey = keyof typeof TEMPLATES;
@@ -27,7 +26,7 @@ function pickTemplate(hints: TaskHints): string {
 	if (desc.includes("next") || desc.includes("admin") || desc.includes("dashboard")) {
 		return TEMPLATES.nextjs;
 	}
-	return TEMPLATES.default;
+	return TEMPLATES.expo;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,21 +59,50 @@ export class E2BSandboxBackend extends BaseSandbox {
 	 *
 	 * @param hints   Task hints used to select the appropriate E2B template.
 	 * @param timeout Max sandbox lifetime in seconds (default: 300 = 5 min).
+	 * @param envVars Additional env vars to inject (merged with hints.envVars).
 	 */
 	static async create(
 		hints: TaskHints = {},
-		timeout = 300
+		timeout = 300,
+		envVars?: Record<string, string>,
 	): Promise<E2BSandboxBackend> {
 		const apiKey = env.E2B_API_KEY;
 		if (!apiKey) throw new Error("E2B_API_KEY is not set");
 
 		const templateId = pickTemplate(hints);
 
+		const mergedEnvs = { ...envVars, ...hints.envVars };
+
 		const sandbox = await Sandbox.create(templateId, {
 			apiKey,
 			timeoutMs: timeout * 1_000,
-			envs: hints.envVars,
+			envs: Object.keys(mergedEnvs).length > 0 ? mergedEnvs : undefined,
 		});
+
+		return new E2BSandboxBackend(sandbox);
+	}
+
+	/**
+	 * Connects to an existing (running or paused) E2B sandbox by ID.
+	 *
+	 * Used for reconnecting after HITL pauses or resuming project-level
+	 * sandboxes. Requires the sandbox to still be alive (not timed out).
+	 *
+	 * @param sandboxId The E2B sandbox ID to reconnect to.
+	 * @param opts      Optional timeout and env vars.
+	 */
+	static async connect(
+		sandboxId: string,
+		opts?: { timeoutMs?: number },
+	): Promise<E2BSandboxBackend> {
+		const apiKey = env.E2B_API_KEY;
+		if (!apiKey) throw new Error("E2B_API_KEY is not set");
+
+		const sandbox = await Sandbox.connect(sandboxId, { apiKey });
+
+		if (opts?.timeoutMs) {
+			await sandbox.setTimeout(opts.timeoutMs);
+		}
 
 		return new E2BSandboxBackend(sandbox);
 	}

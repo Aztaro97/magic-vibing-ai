@@ -30,7 +30,7 @@
     "template:publish:react-native-expo": "cd sandbox-templates && cd react-native-expo && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec",
     "sandbox:logs": "e2b sandbox logs i8swnnryghjz66c5ek77r",
     "template:build:expo": "cd sandbox-templates && cd expo && e2b template build --name expo-web-app --cmd '/compile_page.sh'",
-    "template:publish:expo": "cd sandbox-templates && cd expo && e2b template publish -t 8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec",
+    "template:publish:expo": "cd sandbox-templates && cd expo && e2b template publish -t c9679123-8916-4902-a59c-0b56aed130d1",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -137,3 +137,44 @@ export interface PoolEntry {
 	lastUsedAt: number;
 	inUse: boolean;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User tier — maps to timeout configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type UserTier = "FREE" | "PAID";
+
+/** Sandbox lifecycle status persisted to the `project.sandboxStatus` column. */
+export type SandboxStatus = "active" | "paused" | "destroyed";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Project-level lifecycle management
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Options for resolving a sandbox with project-level lifecycle support.
+ * Unlike `SandboxRouterOptions`, this reads/writes the `project` table
+ * to persist sandbox state across sessions.
+ */
+export interface LifecycleOptions {
+	projectId: string;
+	sessionId: string;
+	orgId?: string;
+	/** Explicit provider override. */
+	provider?: SandboxProvider;
+	/** Task hints for complexity classification. */
+	hints?: TaskHints;
+	/** User subscription tier — determines sandbox timeout. */
+	userTier?: UserTier;
+}
+
+/**
+ * Extended resolution result that includes project-level metadata
+ * (subdomain, ngrok URL) set during lifecycle management.
+ */
+export interface LifecycleResult extends ResolvedSandbox {
+	/** DNS-safe subdomain assigned to the sandbox (for Expo tunneling). */
+	subdomain?: string;
+	/** Public ngrok URL for the sandbox preview. */
+	ngrokUrl?: string;
+}

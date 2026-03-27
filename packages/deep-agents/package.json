@@ -49,8 +49,6 @@
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "lint:fix": "eslint . --fix",
-    "generate": "pnpm with-env pnpm with-env pnpm -F @acme/auth generate --output ../db/src/auth-schema.ts",
-    "dev": "pnpm with-env npx @langchain/langgraph-cli dev --port 2024 --config ../../langgraph.json",
     "start": "node dist/index.js",
     "with-env": "dotenv -e ../../.env --",
     "clean": "git clean -xdf .cache .turbo dist node_modules"

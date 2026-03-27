@@ -16,6 +16,7 @@ export const env = createEnv({
 		DAYTONA_TARGET: z.enum(["us", "eu"]).optional().default("us"),
 		AGENT_LOG_LEVEL: z.string().optional(),
 		SANDBOX_MAX_CONCURRENT_PER_USER: z.string().optional().default("5"),
+		NGROK_AUTHTOKEN: z.string().min(1).optional(),
 
 		LANGCHAIN_TRACING_V2: z.string().optional().default("true"),
 		LANGCHAIN_ENDPOINT: z

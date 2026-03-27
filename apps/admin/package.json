@@ -6,7 +6,9 @@
   "scripts": {
     "build": "pnpm with-env next build",
     "clean": "git clean -xdf .cache .next .turbo node_modules",
-    "dev": "pnpm with-env next dev --turbopack",
+    "langgraph-dev": "pnpm with-env npx @langchain/langgraph-cli dev --port 2024 --config ../../langgraph.json",
+    "next-dev": "pnpm with-env next dev --turbopack",
+    "dev": "pnpm with-env concurrently \"pnpm run langgraph-dev\" \"pnpm run next-dev\"",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "start": "pnpm with-env next start",
@@ -46,6 +48,7 @@
     "@types/node": "^22.14.1",
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
+    "concurrently": "^9.2.1",
     "dotenv-cli": "^8.0.0",
     "eslint": "catalog:",
     "jiti": "^1.21.7",
