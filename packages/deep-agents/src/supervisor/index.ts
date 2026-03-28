@@ -106,6 +106,8 @@ export function createMagicVibingAgent(
 
 		subagents: ALL_SUBAGENTS,
 
+		memory: [], // Agent memory
+
 		// StoreBackend persists the agent's virtual filesystem to LangGraph Store.
 		// Each project+session gets its own namespace so agents don't bleed state.
 		backend: sandbox ?? ((config) => new StoreBackend(config)),
