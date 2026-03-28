@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y curl git && apt-get clean && rm -rf /va
 COPY compile_page.sh /compile_page.sh
 RUN chmod +x /compile_page.sh
 
+# Copy skills-memory (AGENTS.md + skills/) into .deepagents at sandbox root
+COPY skills-memory/ /home/user/.deepagents/
+
 # Install dependencies and customize sandbox
 WORKDIR /home/user
 
