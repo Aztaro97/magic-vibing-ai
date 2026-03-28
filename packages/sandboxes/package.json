@@ -33,6 +33,18 @@
     "./types": {
       "import": "./src/types.ts",
       "types": "./src/types.ts"
+    },
+    "./lifecycle": {
+      "import": "./src/lifecycle/manager.ts",
+      "types": "./src/lifecycle/manager.ts"
+    },
+    "./constants": {
+      "import": "./src/constants/timeouts.ts",
+      "types": "./src/constants/timeouts.ts"
+    },
+    "./utils": {
+      "import": "./src/utils/subdomain.ts",
+      "types": "./src/utils/subdomain.ts"
     }
   },
   "scripts": {
@@ -50,6 +62,7 @@
     "template:publish:expo": "e2b template publish expo-web-app"
   },
   "dependencies": {
+    "@acme/db": "workspace:*",
     "@acme/validators": "workspace:*",
     "@daytonaio/sdk": "^0.21.0",
     "@e2b/code-interpreter": "^2.3.3",

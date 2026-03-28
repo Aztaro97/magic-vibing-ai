@@ -19,6 +19,10 @@ RUN npm install -g @expo/ngrok@^4.1.0
 # Create Expo app with TypeScript and web support
 RUN npx --yes create-expo-app@latest . --template tabs
 
+# Copy skills-memory (AGENTS.md + skills/) into .deepagents at sandbox root
+# Must happen AFTER create-expo-app to avoid directory conflict
+COPY skills-memory/ /home/user/.deepagents/
+
 
 # Set environment variables for port consistency and enable tunnel by default
 ENV PORT=8081

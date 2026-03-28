@@ -1,5 +1,5 @@
 import { env } from "../env";
-import { LazyE2BSandbox } from "./sandbox/lazy-e2b";
+import { LazySandbox } from "./sandbox/lazy-sandbox";
 import { createMagicVibingAgent } from "./supervisor";
 
 export {
@@ -24,6 +24,7 @@ export {
 	reviewAgent,
 	testAgent
 } from "./subagents";
+export { LazySandbox } from "./sandbox/lazy-sandbox";
 export { createMagicVibingAgent } from "./supervisor";
 export {
 	transformAgentStream,
@@ -39,10 +40,20 @@ export type {
 	TodoItem
 } from "./types";
 
-// When E2B_API_KEY is available, wire a lazy sandbox so the LangGraph dev
-// server graph has access to the `execute` tool (shell commands in E2B).
+// When any sandbox provider key is available, wire a lazy sandbox so the
+// LangGraph dev server graph has access to the `execute` tool (shell commands).
 // Without this, the graph falls back to StoreBackend (filesystem-only).
-const sandbox = env.E2B_API_KEY ? new LazyE2BSandbox() : undefined;
+// The LazySandbox auto-selects E2B or Daytona via @acme/sandboxes router.
+const hasSandboxProvider = Boolean(env.E2B_API_KEY) || Boolean(env.DAYTONA_API_KEY);
+const sandbox = hasSandboxProvider ? new LazySandbox() : undefined;
+
+// Ensure lazy-provisioned sandbox is cleaned up on process exit (prevents
+// leaked E2B sandboxes billed by uptime in the dev server).
+if (sandbox) {
+	const cleanup = () => { sandbox.close().catch(console.error); };
+	process.on("SIGTERM", cleanup);
+	process.on("SIGINT", cleanup);
+}
 
 export const graph = createMagicVibingAgent({ sandbox });
 

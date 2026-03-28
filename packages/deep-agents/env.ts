@@ -11,6 +11,7 @@ export const env = createEnv({
 		POSTGRES_URL: z.string(),
 		TAVILY_API_KEY: z.string().min(1),
 		E2B_API_KEY: z.string().min(1).optional(),
+		DAYTONA_API_KEY: z.string().min(1).optional(),
 		AGENT_MODEL: z.string().optional().default("qwen3.5"),
 		AGENT_SUBAGENT_MODEL: z.string().optional().default("qwen3.5"),
 		LANGCHAIN_TRACING_V2: z.string().optional().default("true"),
