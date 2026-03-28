@@ -7,9 +7,6 @@ RUN apt-get update && apt-get install -y curl git && apt-get clean && rm -rf /va
 COPY compile_page.sh /compile_page.sh
 RUN chmod +x /compile_page.sh
 
-# Copy skills-memory (AGENTS.md + skills/) into .deepagents at sandbox root
-COPY skills-memory/ /home/user/.deepagents/
-
 # Install dependencies and customize sandbox
 WORKDIR /home/user
 
@@ -21,6 +18,10 @@ RUN npm install -g @expo/ngrok@^4.1.0
 
 # Create Expo app with TypeScript and web support
 RUN npx --yes create-expo-app@latest . --template tabs
+
+# Copy skills-memory (AGENTS.md + skills/) into .deepagents at sandbox root
+# Must happen AFTER create-expo-app to avoid directory conflict
+COPY skills-memory/ /home/user/.deepagents/
 
 
 # Set environment variables for port consistency and enable tunnel by default
