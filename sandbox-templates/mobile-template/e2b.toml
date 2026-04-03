@@ -11,7 +11,7 @@
 # const sandbox = await Sandbox.create('mobile-template')
 
 team_id = "8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec"
-start_cmd = "/compile_page.sh"
+start_cmd = "echo 'sandbox ready'"
 dockerfile = "e2b.Dockerfile"
 template_name = "mobile-template"
 template_id = "5q5q9v9kflakcmilhqxe"
