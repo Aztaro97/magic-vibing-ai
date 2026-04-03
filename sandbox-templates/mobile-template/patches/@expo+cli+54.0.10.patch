@@ -1,0 +1,406 @@
+diff --git a/node_modules/@expo/cli/build/bin/cli b/node_modules/@expo/cli/build/bin/cli
+index 15e7fef..5241fd8 100755
+--- a/node_modules/@expo/cli/build/bin/cli
++++ b/node_modules/@expo/cli/build/bin/cli
+@@ -108,19 +108,25 @@ const commands = {
+     register: ()=>Promise.resolve().then(()=>/*#__PURE__*/ _interop_require_wildcard(require("../src/register/index.js"))).then((i)=>i.expoRegister),
+     whoami: ()=>Promise.resolve().then(()=>/*#__PURE__*/ _interop_require_wildcard(require("../src/whoami/index.js"))).then((i)=>i.expoWhoami)
+ };
+-const args = (0, _arg().default)({
++console.log('[CLI DEBUG] process.argv:', process.argv);
++const argSpec = {
+     // Types
+     '--version': Boolean,
+     '--help': Boolean,
+     // NOTE(EvanBacon): This is here to silence warnings from processes that
+     // expect the global expo-cli.
+     '--non-interactive': Boolean,
++    // Custom ngrok URL for tunnel
++    '--ngrokurl': String,
+     // Aliases
+     '-v': '--version',
+     '-h': '--help'
+-}, {
++};
++console.log('[CLI DEBUG] argSpec has --ngrokurl:', '--ngrokurl' in argSpec);
++const args = (0, _arg().default)(argSpec, {
+     permissive: true
+ });
++console.log('[CLI DEBUG] Parsed args:', args);
+ if (args['--version']) {
+     // Version is added in the build script.
+     console.log("54.0.10");
+@@ -245,6 +251,10 @@ const commandArgs = isSubcommand ? args._.slice(1) : args._;
+ if (args['--help']) {
+     commandArgs.push('--help');
+ }
++// Push the ngrokurl flag to the subcommand args.
++if (args['--ngrokurl']) {
++    commandArgs.push('--ngrokurl', args['--ngrokurl']);
++}
+ // Install exit hooks
+ process.on('SIGINT', ()=>process.exit(0));
+ process.on('SIGTERM', ()=>process.exit(0));
+diff --git a/node_modules/@expo/cli/build/src/start/index.js b/node_modules/@expo/cli/build/src/start/index.js
+index 10a0455..f086258 100644
+--- a/node_modules/@expo/cli/build/src/start/index.js
++++ b/node_modules/@expo/cli/build/src/start/index.js
+@@ -84,6 +84,7 @@ const expoStart = async (argv)=>{
+         '--tunnel': Boolean,
+         '--lan': Boolean,
+         '--localhost': Boolean,
++        '--ngrokurl': String,
+         '--offline': Boolean,
+         '--go': Boolean,
+         // Aliases
+diff --git a/node_modules/@expo/cli/build/src/start/interface/interactiveActions.js b/node_modules/@expo/cli/build/src/start/interface/interactiveActions.js
+index 1604ed4..63ad06b 100644
+--- a/node_modules/@expo/cli/build/src/start/interface/interactiveActions.js
++++ b/node_modules/@expo/cli/build/src/start/interface/interactiveActions.js
+@@ -81,24 +81,23 @@ class DevServerManagerActions {
+             const devServer = this.devServerManager.getDefaultDevServer();
+             try {
+                 const nativeRuntimeUrl = devServer.getNativeRuntimeUrl();
+-                const interstitialPageUrl = devServer.getRedirectUrl();
+-                (0, _commandsTable.printQRCode)(interstitialPageUrl ?? nativeRuntimeUrl);
+-                if (interstitialPageUrl) {
+-                    _log.log((0, _commandsTable.printItem)((0, _chalk().default)`Choose an app to open your project at {underline ${interstitialPageUrl}}`));
++
++                // Extract ngrok URL from the native runtime URL
++                const ngrokUrlMatch = nativeRuntimeUrl.match(/(https:\/\/[^\/]+\.ngrok\.dev)/);
++                if (ngrokUrlMatch) {
++                    const ngrokUrl = ngrokUrlMatch[1];
++                    _log.log(`Ngrok URL: ${ngrokUrl}`);
++                } else {
++                    // Fallback if no ngrok URL is found
++                    _log.log(`Metro waiting on ${nativeRuntimeUrl}`);
+                 }
++
+                 if (_env.env.__EXPO_E2E_TEST) {
+                     // Print the URL to stdout for tests
+                     console.info(`[__EXPO_E2E_TEST:server] ${JSON.stringify({
+                         url: devServer.getDevServerUrl()
+                     })}`);
+                 }
+-                _log.log((0, _commandsTable.printItem)((0, _chalk().default)`Metro waiting on {underline ${nativeRuntimeUrl}}`));
+-                if (options.devClient === false) {
+-                    // TODO: if development build, change this message!
+-                    _log.log((0, _commandsTable.printItem)('Scan the QR code above with Expo Go (Android) or the Camera app (iOS)'));
+-                } else {
+-                    _log.log((0, _commandsTable.printItem)('Scan the QR code above to open the project in a development build. ' + (0, _link.learnMore)('https://expo.fyi/start')));
+-                }
+             } catch (error) {
+                 console.log('err', error);
+                 // @ts-ignore: If there is no development build scheme, then skip the QR code.
+diff --git a/node_modules/@expo/cli/build/src/start/resolveOptions.js b/node_modules/@expo/cli/build/src/start/resolveOptions.js
+index 67727b3..c05e46e 100644
+--- a/node_modules/@expo/cli/build/src/start/resolveOptions.js
++++ b/node_modules/@expo/cli/build/src/start/resolveOptions.js
+@@ -71,7 +71,7 @@ async function resolveOptionsAsync(projectRoot, args) {
+         scheme: args['--scheme'],
+         devClient: isDevClient
+     });
+-    return {
++    const options = {
+         privateKeyPath: args['--private-key-path'] ?? null,
+         android: !!args['--android'],
+         web: !!args['--web'],
+@@ -85,8 +85,11 @@ async function resolveOptionsAsync(projectRoot, args) {
+         minify: !!args['--minify'],
+         devClient: isDevClient,
+         scheme,
+-        host
++        host,
++        ngrokurl: args['--ngrokurl']
+     };
++    console.log('[resolveOptions] Returning options with ngrokurl:', options.ngrokurl);
++    return options;
+ }
+ async function resolveSchemeAsync(projectRoot, options) {
+     if (typeof options.scheme === 'string') {
+diff --git a/node_modules/@expo/cli/build/src/start/server/AsyncNgrok.js b/node_modules/@expo/cli/build/src/start/server/AsyncNgrok.js
+index 4c42029..c66470b 100644
+--- a/node_modules/@expo/cli/build/src/start/server/AsyncNgrok.js
++++ b/node_modules/@expo/cli/build/src/start/server/AsyncNgrok.js
+@@ -101,8 +101,9 @@ class AsyncNgrok {
+     constructor(projectRoot, port){
+         this.projectRoot = projectRoot;
+         this.port = port;
++        this.ngrokurl = null;
+         this.serverUrl = null;
+-        this.resolver = new _NgrokResolver.NgrokResolver(projectRoot);
++        // this.resolver = new _NgrokResolver.NgrokResolver(projectRoot); // Not needed - using system ngrok
+     }
+     getActiveUrl() {
+         return this.serverUrl;
+@@ -130,12 +131,14 @@ class AsyncNgrok {
+     /** Exposed for testing. */ async _getProjectSubdomainAsync() {
+         return (await this._getIdentifyingUrlSegmentsAsync()).join('-');
+     }
+-    /** Start ngrok on the given port for the project. */ async startAsync({ timeout } = {}) {
+-        // Ensure the instance is loaded first, this can linger so we should run it before the timeout.
+-        await this.resolver.resolveAsync({
+-            // For now, prefer global install since the package has native code (harder to install) and doesn't change very often.
+-            prefersGlobalInstall: true
+-        });
++    /** Start ngrok on the given port for the project. */ async startAsync({ timeout, ngrokurl } = {}) {
++        console.log('[AsyncNgrok] startAsync called with ngrokurl:', ngrokurl);
++        // Store ngrokurl if provided
++        if (ngrokurl) {
++            this.ngrokurl = ngrokurl;
++            console.log('[AsyncNgrok] Stored ngrokurl:', this.ngrokurl);
++        }
++        // Skip the @expo/ngrok package resolver - using local ngrok instead
+         // NOTE(EvanBacon): If the user doesn't have ADB installed,
+         // then skip attempting to reverse the port.
+         if ((0, _adbReverse.hasAdbReverseAsync)()) {
+@@ -154,22 +157,21 @@ class AsyncNgrok {
+         _log.log('Tunnel ready.');
+     }
+     /** Stop the ngrok process if it's running. */ async stopAsync() {
+-        var _this_resolver_get_kill, _this_resolver_get;
+         debug('Stopping Tunnel');
+-        await ((_this_resolver_get = this.resolver.get()) == null ? void 0 : (_this_resolver_get_kill = _this_resolver_get.kill) == null ? void 0 : _this_resolver_get_kill.call(_this_resolver_get));
++        // Kill the local ngrok process if it exists
++        if (this._ngrokProcess) {
++            this._ngrokProcess.kill();
++            this._ngrokProcess = null;
++        }
+         this.serverUrl = null;
+     }
+     /** Exposed for testing. */ async _connectToNgrokAsync(options = {}, attempts = 0) {
+         // Attempt to stop any hanging processes, this increases the chances of a successful connection.
+         await this.stopAsync();
+-        // Get the instance quietly or assert otherwise.
+-        const instance = await this.resolver.resolveAsync({
+-            shouldPrompt: false,
+-            autoInstall: false
+-        });
++        // Skip the @expo/ngrok package resolver - using local ngrok instead
+         // TODO(Bacon): Consider dropping the timeout functionality:
+         // https://github.com/expo/expo/pull/16556#discussion_r822307373
+-        const results = await (0, _delay.resolveWithTimeout)(()=>this.connectToNgrokInternalAsync(instance, attempts), {
++        const results = await (0, _delay.resolveWithTimeout)(()=>this.connectToNgrokInternalAsync(null, attempts), {
+             timeout: options.timeout ?? TUNNEL_TIMEOUT,
+             errorMessage: 'ngrok tunnel took too long to connect.'
+         });
+@@ -198,25 +200,151 @@ class AsyncNgrok {
+     }
+     async connectToNgrokInternalAsync(instance, attempts = 0) {
+         try {
+-            // Global config path.
+-            const configPath = _path().join((0, _UserSettings.getSettingsDirectory)(), 'ngrok.yml');
+-            debug('Global config path:', configPath);
+-            const urlProps = await this._getConnectionPropsAsync();
+-            const url = await instance.connect({
+-                ...urlProps,
+-                authtoken: NGROK_CONFIG.authToken,
+-                configPath,
+-                onStatusChange (status) {
+-                    if (status === 'closed') {
+-                        _log.error(_chalk().default.red('Tunnel connection has been closed. This is often related to intermittent connection issues between the dev server and ngrok. Restart the dev server to try connecting to ngrok again.') + _chalk().default.gray('\nCheck the Ngrok status page for outages: https://status.ngrok.com/'));
+-                    } else if (status === 'connected') {
+-                        _log.log('Tunnel connected.');
++            // Use local ngrok instead of @expo/ngrok package
++            const { spawn } = require('child_process');
++
++            // Get custom domain from options or generate one
++            let customDomain;
++            console.log('[AsyncNgrok] connectToNgrokInternalAsync - this.ngrokurl:', this.ngrokurl);
++            if (this.ngrokurl) {
++                // Transform capsule-222 to capsule-222.ngrok.dev
++                customDomain = this.ngrokurl.includes('.ngrok.dev')
++                    ? this.ngrokurl.replace('https://', '').replace('http://', '')
++                    : `${this.ngrokurl}.ngrok.dev`;
++                console.log('[AsyncNgrok] Using custom ngrok domain from --ngrokurl:', customDomain);
++                debug('Using custom ngrok domain from --ngrokurl:', customDomain);
++            } else {
++                // Generate custom domain with capsule- prefix and random alphanumeric string
++                const crypto = require('crypto');
++                const randomString = crypto.randomBytes(6).toString('base64url'); // More random
++                customDomain = `capsule-${randomString}.ngrok.dev`;
++                console.log('[AsyncNgrok] Generated random ngrok domain:', customDomain);
++                debug('Generated random ngrok domain:', customDomain);
++            }
++
++            // Build ngrok command arguments
++            // Use --domain=value format for ngrok v3.14+
++            const args = ['http', `--domain=${customDomain}`, String(this.port)];
++
++            debug('Starting ngrok with domain:', customDomain);
++
++            // Spawn ngrok process
++            console.log('[AsyncNgrok] Spawning ngrok with args:', args);
++            // Try to find ngrok v3+ in common locations, fallback to PATH
++            const { execSync } = require('child_process');
++            let ngrokBinary = 'ngrok';
++            try {
++                // Try to get the system ngrok (not the old v2 in node_modules)
++                const whichResult = execSync('which ngrok 2>/dev/null || echo ""').toString().trim();
++                if (whichResult && !whichResult.includes('node_modules')) {
++                    ngrokBinary = whichResult;
++                } else {
++                    // Try common locations for ngrok v3
++                    const possiblePaths = ['/usr/local/bin/ngrok', '/opt/homebrew/bin/ngrok'];
++                    for (const path of possiblePaths) {
++                        try {
++                            require('fs').accessSync(path, require('fs').constants.X_OK);
++                            ngrokBinary = path;
++                            break;
++                        } catch (e) {}
+                     }
+-                },
+-                port: this.port
++                }
++            } catch (e) {
++                // Fallback to 'ngrok' in PATH
++            }
++            console.log('[AsyncNgrok] Using ngrok binary:', ngrokBinary);
++            const ngrokProcess = spawn(ngrokBinary, args, {
++                stdio: ['ignore', 'pipe', 'pipe']
++            });
++
++            // Set up status change handler (like @expo/ngrok does)
++            const onStatusChange = (status) => {
++                if (status === 'closed') {
++                    _log.error(_chalk().default.red('Tunnel connection has been closed. This is often related to intermittent connection issues between the dev server and ngrok. Restart the dev server to try connecting to ngrok again.') + _chalk().default.gray('\nCheck the Ngrok status page for outages: https://status.ngrok.com/'));
++                } else if (status === 'connected') {
++                    _log.log('Tunnel connected.');
++                }
++            };
++
++            // Monitor ngrok stdout for connection status (CRITICAL FOR HOT RELOAD)
++            // This matches @expo/ngrok behavior in /src/process.js:56-67
++            ngrokProcess.stdout.on('data', (data) => {
++                const msg = data.toString().trim();
++                console.log('[AsyncNgrok] ngrok stdout:', msg);
++
++                // Monitor connection status like @expo/ngrok does
++                if (msg.match(/client session established/i)) {
++                    onStatusChange('connected');
++                } else if (msg.match(/session closed, starting reconnect loop/i)) {
++                    onStatusChange('closed');
++                }
++            });
++
++            ngrokProcess.stderr.on('data', (data) => {
++                console.error('[AsyncNgrok] ngrok stderr:', data.toString());
++            });
++
++            ngrokProcess.on('error', (err) => {
++                console.error('[AsyncNgrok] ngrok process error:', err);
+             });
++
++            ngrokProcess.on('exit', (code) => {
++                console.log('[AsyncNgrok] ngrok process exited with code:', code);
++                this._ngrokProcess = null;
++            });
++
++            // Store process for cleanup
++            this._ngrokProcess = ngrokProcess;
++
++            // Wait for ngrok API to be ready with retry logic (like @expo/ngrok)
++            console.log('[AsyncNgrok] Waiting for ngrok API to be ready...');
++            const maxRetries = 100;  // Same as @expo/ngrok
++            const retryDelay = 200;  // Same as @expo/ngrok
++
++            let url;
++            for (let i = 0; i < maxRetries; i++) {
++                await new Promise((resolve) => setTimeout(resolve, retryDelay));
++
++                try {
++                    const http = require('http');
++                    url = await new Promise((resolve, reject) => {
++                        http.get('http://localhost:4040/api/tunnels', (res) => {
++                            let data = '';
++                            res.on('data', (chunk) => { data += chunk; });
++                            res.on('end', () => {
++                                try {
++                                    const tunnels = JSON.parse(data);
++                                    const tunnel = tunnels.tunnels.find(t => t.config.addr.includes(String(this.port)));
++                                    if (tunnel && tunnel.public_url) {
++                                        resolve(tunnel.public_url);
++                                    } else {
++                                        reject(new Error('No tunnel found'));
++                                    }
++                                } catch (e) {
++                                    reject(e);
++                                }
++                            });
++                        }).on('error', reject);
++                    });
++
++                    // Successfully got the URL
++                    console.log('[AsyncNgrok] Successfully connected to ngrok:', url);
++                    break;
++
++                } catch (error) {
++                    if (i === maxRetries - 1) {
++                        throw new Error(`Failed to connect to ngrok after ${maxRetries} attempts: ${error.message}`);
++                    }
++                    // Continue retrying
++                }
++            }
++
++            // NOTE: Keep stdout listeners active (unlike original @expo/ngrok)
++            // We need continuous monitoring for "session closed" messages for hot reload
++
+             return url;
+         } catch (error) {
++            console.error('[AsyncNgrok] Error connecting to ngrok:', error);
+             const assertNgrok = ()=>{
+                 if ((0, _NgrokResolver.isNgrokClientError)(error)) {
+                     var _error_body_details;
+diff --git a/node_modules/@expo/cli/build/src/start/server/BundlerDevServer.js b/node_modules/@expo/cli/build/src/start/server/BundlerDevServer.js
+index c0ebf7e..13a7495 100644
+--- a/node_modules/@expo/cli/build/src/start/server/BundlerDevServer.js
++++ b/node_modules/@expo/cli/build/src/start/server/BundlerDevServer.js
+@@ -90,6 +90,7 @@ class BundlerDevServer {
+         this.platformBundlers = platformBundlers;
+         this.tunnel = null;
+         this.devSession = null;
++        this.ngrokurl = null;
+         this.instance = null;
+         this.platformManagers = {};
+         this.urlCreator = null;
+@@ -121,6 +122,12 @@ class BundlerDevServer {
+             instance = await this.startImplementationAsync(options);
+         }
+         this.setInstance(instance);
++        // Store ngrokurl from options if provided
++        console.log('[BundlerDevServer] options.ngrokurl:', options.ngrokurl);
++        if (options.ngrokurl) {
++            this.ngrokurl = options.ngrokurl;
++            console.log('[BundlerDevServer] Stored ngrokurl:', this.ngrokurl);
++        }
+         await this.postStartAsync(options);
+         return instance;
+     }
+@@ -189,7 +196,8 @@ class BundlerDevServer {
+         if (!port) return null;
+         debug('[tunnel] connect to port: ' + port);
+         this.tunnel = (0, _env.envIsWebcontainer)() ? new _AsyncWsTunnel.AsyncWsTunnel(this.projectRoot, port) : new _AsyncNgrok.AsyncNgrok(this.projectRoot, port);
+-        await this.tunnel.startAsync();
++        console.log('[BundlerDevServer] Calling tunnel.startAsync with ngrokurl:', this.ngrokurl);
++        await this.tunnel.startAsync({ ngrokurl: this.ngrokurl });
+         return this.tunnel;
+     }
+     async startDevSessionAsync() {
+diff --git a/node_modules/@expo/cli/build/src/start/startAsync.js b/node_modules/@expo/cli/build/src/start/startAsync.js
+index 43c705e..d0b4a8b 100644
+--- a/node_modules/@expo/cli/build/src/start/startAsync.js
++++ b/node_modules/@expo/cli/build/src/start/startAsync.js
+@@ -91,11 +91,13 @@ async function getMultiBundlerStartOptions(projectRoot, options, settings, platf
+         maxWorkers: options.maxWorkers,
+         resetDevServer: options.clear,
+         minify: options.minify,
++        ngrokurl: options.ngrokurl,
+         location: {
+             hostType: options.host,
+             scheme: options.scheme
+         }
+     };
++    console.log('[startAsync] commonOptions.ngrokurl:', commonOptions.ngrokurl);
+     const multiBundlerSettings = await (0, _resolveOptions.resolvePortsAsync)(projectRoot, options, settings);
+     const optionalBundlers = {
+         ...platformBundlers

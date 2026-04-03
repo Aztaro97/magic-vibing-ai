@@ -9,6 +9,7 @@ export * from "./fragment";
 export * from "./llm-key";
 export * from "./message";
 export * from "./project";
+export * from "./sandbox-event";
 export * from "./schema";
 
 // Export TypeScript types

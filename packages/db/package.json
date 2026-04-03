@@ -19,6 +19,10 @@
 	"./agents": {
 		"types": "./dist/agents.d.ts",
 		"default": "./src/agents.ts"
+	},
+	"./sandbox-event": {
+		"types": "./dist/sandbox-event.d.ts",
+		"default": "./src/sandbox-event.ts"
 	}
   },
   "license": "MIT",

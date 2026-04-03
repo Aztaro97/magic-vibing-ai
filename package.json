@@ -31,6 +31,8 @@
     "sandbox:logs": "e2b sandbox logs i8swnnryghjz66c5ek77r",
     "template:build:expo": "cd sandbox-templates && cd expo && e2b template build --name expo-web-app --cmd '/compile_page.sh'",
     "template:publish:expo": "cd sandbox-templates && cd expo && e2b template publish -t c9679123-8916-4902-a59c-0b56aed130d1",
+    "template:build:mobile": "cd sandbox-templates && cd mobile-template && e2b template build --name mobile-template",
+    "template:publish:mobile": "cd sandbox-templates && cd mobile-template && e2b template publish -t 5q5q9v9kflakcmilhqxe",
     "prepare": "husky"
   },
   "devDependencies": {

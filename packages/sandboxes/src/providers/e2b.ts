@@ -14,6 +14,7 @@ import type { TaskHints } from "../types";
 const TEMPLATES = {
 	nextjs: "nextjs-sandbox",   // Node 20, pnpm, TypeScript, Next.js deps
 	expo: "expo-web-app",     // Node 20, pnpm, Expo, React Native deps
+	mobile: "mobile-template", // Node 20, pnpm, Expo, React Native deps
 } as const;
 
 type TemplateKey = keyof typeof TEMPLATES;
@@ -21,12 +22,12 @@ type TemplateKey = keyof typeof TEMPLATES;
 function pickTemplate(hints: TaskHints): string {
 	const desc = hints.description?.toLowerCase() ?? "";
 	if (desc.includes("expo") || desc.includes("react native") || desc.includes("mobile")) {
-		return TEMPLATES.expo;
+		return TEMPLATES.mobile;
 	}
 	if (desc.includes("next") || desc.includes("admin") || desc.includes("dashboard")) {
-		return TEMPLATES.nextjs;
+		return TEMPLATES.mobile;
 	}
-	return TEMPLATES.expo;
+	return TEMPLATES.mobile;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
