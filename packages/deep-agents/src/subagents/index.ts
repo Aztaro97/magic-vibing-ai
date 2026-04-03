@@ -1,11 +1,11 @@
 import type { SubAgent } from "deepagents";
 import {
+	bunScript,
 	findSymbol,
 	internetSearch,
 	parseStackTrace,
 	parseTestResults,
 	planTestSuite,
-	pnpmScript,
 	readBeforeEdit,
 	recordFinding,
 	scaffoldJsdoc,
@@ -70,7 +70,7 @@ When writing files, use EXACT parameter names:
 3. **Verify**: Run 'npm_script' with "typecheck".
 4. **Lint**: Ensure styling and logic follow project rules via "lint".
 `.trim(),
-	tools: [pnpmScript, findSymbol, readBeforeEdit],
+	tools: [bunScript, findSymbol, readBeforeEdit],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ When writing files, use EXACT parameter names:
 
 Note: Generated apps use mock/dummy data, NOT databases. Do not create DB schemas or migrations.
 `.trim(),
-	tools: [internetSearch, parseStackTrace, stateHypothesis, readBeforeEdit, pnpmScript],
+	tools: [internetSearch, parseStackTrace, stateHypothesis, readBeforeEdit, bunScript],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ When writing files, use EXACT parameter names:
 2. Write tests in the same directory as the component (e.g., Component.test.tsx).
 3. Run 'npm test' and parse results.
 `.trim(),
-	tools: [planTestSuite, readBeforeEdit, pnpmScript, parseTestResults],
+	tools: [planTestSuite, readBeforeEdit, bunScript, parseTestResults],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -170,7 +170,7 @@ When writing files, use EXACT parameter names:
 
 Follow standard JSDoc rules and keep READMEs focused on the single root directory.
 `.trim(),
-	tools: [scaffoldJsdoc, readBeforeEdit, pnpmScript],
+	tools: [scaffoldJsdoc, readBeforeEdit, bunScript],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ When writing files, use EXACT parameter names:
 
 Verdict: APPROVE, REQUEST CHANGES, or BLOCK.
 `.trim(),
-	tools: [recordFinding, readBeforeEdit, pnpmScript],
+	tools: [recordFinding, readBeforeEdit, bunScript],
 };
 
 

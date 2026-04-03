@@ -70,34 +70,34 @@ export async function handleE2bWebhook(
 	try {
 		const json: unknown = JSON.parse(rawBody);
 		payload = e2bWebhookPayloadSchema.parse(json);
-	} catch {
+	} catch (error) {
 		return {
 			success: false,
 			eventId: null,
-			error: "Invalid webhook payload",
+			error: "Invalid webhook payload " + (error instanceof Error ? error.message : ""),
 		};
 	}
 
 	// ── 3. Persist sandbox event (idempotent) ──────
-	const execution = payload.eventData.execution;
+	const execution = payload.event_data;
 
 	await db
 		.insert(sandboxEvent)
 		.values({
 			e2bEventId: payload.id,
-			sandboxId: payload.sandboxId,
-			sandboxExecutionId: payload.sandboxExecutionId ?? null,
-			sandboxTemplateId: payload.sandboxTemplateId ?? null,
-			sandboxBuildId: payload.sandboxBuildId ?? null,
-			sandboxTeamId: payload.sandboxTeamId ?? null,
+			sandboxId: payload.sandbox_id,
+			sandboxExecutionId: payload.sandbox_execution_id ?? null,
+			sandboxTemplateId: payload.sandbox_template_id ?? null,
+			sandboxBuildId: payload.sandbox_build_id ?? null,
+			sandboxTeamId: payload.sandbox_team_id ?? null,
 			type: payload.type,
-			sandboxMetadata: payload.eventData.sandbox_metadata ?? null,
-			executionStartedAt: execution
-				? new Date(execution.started_at)
+			sandboxMetadata: payload.event_data.sandbox_metadata ?? null,
+			executionStartedAt: execution?.execution?.started_at
+				? new Date(execution.execution.started_at)
 				: null,
-			executionVcpuCount: execution?.vcpu_count ?? null,
-			executionMemoryMb: execution?.memory_mb ?? null,
-			executionTimeMs: execution?.execution_time ?? null,
+			executionVcpuCount: execution?.execution?.vcpu_count ?? null,
+			executionMemoryMb: execution?.execution?.memory_mb ?? null,
+			executionTimeMs: execution?.execution?.execution_time ?? null,
 			eventTimestamp: new Date(payload.timestamp),
 		})
 		.onConflictDoNothing({ target: sandboxEvent.e2bEventId });
@@ -111,17 +111,17 @@ export async function handleE2bWebhook(
 				status: newStatus,
 				updatedAt: new Date(),
 				...(payload.type === "sandbox.lifecycle.killed" && execution
-					? { durationMs: execution.execution_time }
+					? { durationMs: execution.execution?.execution_time }
 					: {}),
 			})
-			.where(eq(agentSession.sandboxId, payload.sandboxId));
+			.where(eq(agentSession.sandboxId, payload.sandbox_id));
 	}
 
 
 
 	// 5. Update Project Status
 	const findProject = await db.query.project.findFirst({
-		where: eq(project.sandboxId, payload.sandboxId),
+		where: eq(project.sandboxId, payload.sandbox_id),
 	});
 
 	if (findProject) {
@@ -131,7 +131,7 @@ export async function handleE2bWebhook(
 				sandboxStatus: newStatus,
 				updatedAt: new Date(),
 			})
-			.where(eq(project.sandboxId, payload.sandboxId));
+			.where(eq(project.sandboxId, payload.sandbox_id));
 	}
 
 	return { success: true, eventId: payload.id };

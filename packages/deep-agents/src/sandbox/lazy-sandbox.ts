@@ -98,7 +98,7 @@ export class LazySandbox extends BaseSandbox {
 		if (!resolved) {
 			throw new Error(
 				"[LazySandbox] No sandbox provider available. " +
-					"Set E2B_API_KEY or DAYTONA_API_KEY to enable sandbox execution.",
+				"Set E2B_API_KEY or DAYTONA_API_KEY to enable sandbox execution.",
 			);
 		}
 
@@ -113,6 +113,21 @@ export class LazySandbox extends BaseSandbox {
 		const sandbox = await this._ensureInitialized();
 		return sandbox.execute(command);
 	}
+
+	// async execute(command: string): Promise<ExecuteResponse> {
+	// 	const sandbox = await this._ensureInitialized();
+	// 	const result = await sandbox.execute(command);
+	// 	// Surface stderr back to the model instead of letting the SDK throw
+	// 	if (result.exitCode !== 0) {
+	// 		return {
+	// 			...result,
+	// 			// deepagents SDK uses this field to decide whether to throw CommandExitError
+	// 			stdout: result.stdout,
+	// 			stderr: result.stderr ?? `Command exited with code ${result.exitCode}`,
+	// 		};
+	// 	}
+	// 	return result;
+	// }
 
 	async uploadFiles(
 		files: Array<[string, Uint8Array]>,
