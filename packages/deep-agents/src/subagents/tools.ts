@@ -11,47 +11,30 @@ import { tool } from "@langchain/core/tools";
 import { TavilySearch } from "@langchain/tavily";
 import { z } from "zod";
 import { env } from "../../env";
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared across all agents — monorepo-aware execution helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Run a pnpm workspace script for a specific package.
- * Surfaces the exit code and stdout in a structured way so the agent
- * can parse pass/fail without regex hacks on raw terminal output.
- */
-export const pnpmScript = tool(
-	async ({ filter, script, args }: { filter: string; script: string; args?: string }) => {
-		const cmd = `pnpm --filter "${filter}" ${script}${args ? ` ${args}` : ""}`;
-		// The FilesystemMiddleware execute() tool handles actual shell execution.
-		// This tool formats the command string and declares the intent explicitly
-		// so it appears as a structured event in the LangSmith trace.
-		return JSON.stringify({ command: cmd, intent: `run ${script} in ${filter}` });
+
+export const bunScript = tool(
+	async ({ script, args }: { script: string; args?: string }) => {
+		const cmd = `bun run ${script}${args ? ` ${args}` : ""}`;
+		return JSON.stringify({ command: cmd, intent: `run ${script}` });
 	},
 	{
-		name: "pnpm_script",
+		name: "bun_script",
 		description:
-			"Run a pnpm workspace script for a specific package. " +
-			"Use this instead of raw shell commands for all pnpm operations. " +
-			"Examples: filter='@acme/api', script='typecheck' | filter='@acme/db', script='db:generate'",
+			"Run a bun script from the Expo project's package.json. " +
+			"The sandbox is a single Expo app — no workspace filter needed. " +
+			"Examples: script='typecheck' | script='lint' | script='test'",
 		schema: z.object({
-			filter: z
-				.string()
-				.describe("Package name or glob. Examples: '@acme/api', '@acme/mobile', './apps/admin'"),
-			script: z
-				.string()
-				.describe("Script name from that package's package.json. Examples: 'typecheck', 'lint', 'test', 'build'"),
-			args: z
-				.string()
-				.optional()
-				.describe("Extra CLI arguments appended after the script name"),
+			script: z.string().describe(
+				"Script name from package.json. Available: 'start', 'lint', 'build', 'build:web', 'typecheck'"
+			),
+			args: z.string().optional().describe("Extra CLI arguments appended after script name"),
 		}),
 	}
 );
 
 /**
  * Look up where a TypeScript symbol (function, type, variable) is defined
- * and where it is used across the monorepo.
  */
 export const findSymbol = tool(
 	async ({ symbol, kind }: { symbol: string; kind?: string }) => {
@@ -66,8 +49,8 @@ export const findSymbol = tool(
 	{
 		name: "find_symbol",
 		description:
-			"Find where a TypeScript symbol is exported and where it is imported/used across the monorepo. " +
-			"Always call this before editing or renaming any exported symbol.",
+			"Find where a TypeScript symbol is exported and where it is imported/used " +
+			"across the Expo project. Always call this before editing or renaming any exported symbol.",
 		schema: z.object({
 			symbol: z.string().describe("The exact name of the symbol to find"),
 			kind: z
