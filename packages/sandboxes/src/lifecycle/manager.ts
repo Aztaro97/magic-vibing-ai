@@ -1,17 +1,17 @@
-// ──────────────────────────��────────────────────────────���─────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // SandboxLifecycleManager
 //
 // Orchestrates sandbox create/resume/connect using the `project` table as
 // the source of truth. Handles both E2B and Daytona providers, env var
 // injection, subdomain/ngrok URL management, and concurrency tracking.
-// ─────────────────────���────────────────────────────��──────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 import type { BaseSandbox } from "deepagents";
 
 import { env } from "../../env";
+import { assertConcurrencyLimit, decrementActiveCount, incrementActiveCount } from "../concurrency";
 import { buildSandboxEnvVars } from "../constants/sandbox-env";
 import { getTimeoutForUserTier } from "../constants/timeouts";
-import { assertConcurrencyLimit, incrementActiveCount, decrementActiveCount } from "../concurrency";
 import { DaytonaSandboxBackend } from "../providers/daytona";
 import { E2BSandboxBackend } from "../providers/e2b";
 import { resolveSandbox } from "../router";
@@ -27,9 +27,9 @@ import {
 	updateProjectSandboxState,
 } from "./project-sync";
 
-// ��──────────────────────────────���────────────────────────────���────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Public API
-// ─���───────────────────────────────────────────────���───────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Resolves a sandbox for a project, using the `project` table to determine
@@ -40,7 +40,7 @@ import {
  * 2. If active sandbox exists → try reconnect (E2B or Daytona)
  * 3. On "not found" → clear stale state, fall through to create
  * 4. If no sandbox → delegate to `resolveSandbox()` for classification
- * 5. After acquisition → update project with sandboxId, status, subdomain, ngrokUrl
+ * 5. After acquisition → start ngrok, poll for live URL, persist to project
  *
  * Returns `null` when no sandbox providers are configured.
  */
@@ -68,13 +68,8 @@ export async function resolveProjectSandbox(
 		);
 
 		if (reconnected) {
-			// Track concurrency
 			if (orgId) incrementActiveCount(orgId);
-
-			return {
-				...reconnected,
-				acquiredAt,
-			};
+			return { ...reconnected, acquiredAt };
 		}
 
 		// Reconnect failed — stale state already cleared inside tryReconnect
@@ -91,18 +86,13 @@ export async function resolveProjectSandbox(
 
 		if (resumed) {
 			if (orgId) incrementActiveCount(orgId);
-
-			return {
-				...resumed,
-				acquiredAt,
-			};
+			return { ...resumed, acquiredAt };
 		}
 	}
 
-	// ── 3. Create a new sandbox via the existing router ──────────���───────────
+	// ── 3. Create a new sandbox via the router ───────────────────────────────
 	const providerOverride = options.provider ?? hints.provider;
 
-	// Build env vars for the new sandbox
 	const hasE2B = Boolean(env.E2B_API_KEY);
 	const anticipatedProvider: SandboxProvider = providerOverride
 		?? (hasE2B ? "e2b" : "daytona");
@@ -127,9 +117,19 @@ export async function resolveProjectSandbox(
 
 	if (!resolved) return null;
 
-	// ── 4. Persist sandbox state to project ────��─────────────────────────────
-	const ngrokUrl = computeNgrokUrl(subdomain, resolved.provider);
+	// ── 4. Start ngrok and fetch the live random preview URL ─────────────────
+	// ngrok assigns a random URL (e.g. https://abc123.ngrok-free.app) on the
+	// free plan — it cannot be pre-computed. We start ngrok as a background
+	// process inside the sandbox, then poll localhost:4040/api/tunnels until
+	// the tunnel is up and the URL is available.
+	let ngrokUrl: string | null = null;
 
+	if (resolved.provider === "e2b" && env.NGROK_AUTHTOKEN) {
+		await startNgrok(resolved.instance);
+		ngrokUrl = await fetchLiveNgrokUrl(resolved.instance);
+	}
+
+	// ── 5. Persist sandbox state to project ──────────────────────────────────
 	await updateProjectSandboxState(projectId, {
 		sandboxId: resolved.id,
 		sandboxStatus: "active",
@@ -142,7 +142,8 @@ export async function resolveProjectSandbox(
 
 	console.info(
 		`[lifecycle] ${sessionId}: Sandbox provisioned ` +
-		`(provider=${resolved.provider}, id=${resolved.id}, subdomain=${subdomain})`,
+		`(provider=${resolved.provider}, id=${resolved.id}, subdomain=${subdomain}, ` +
+		`ngrokUrl=${ngrokUrl ?? "none"})`,
 	);
 
 	return {
@@ -219,14 +220,15 @@ export function releaseSandbox(orgId?: string): void {
 	if (orgId) decrementActiveCount(orgId);
 }
 
-// ───────��─────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Internal helpers
-// ─────��────────────���──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Attempts to reconnect to an existing sandbox by ID.
  * Returns `LifecycleResult` on success, `null` on failure.
  * On "not found" errors, clears the stale sandbox state from the project.
+ * On successful E2B reconnect, polls for the live ngrok URL.
  */
 async function tryReconnect(
 	sandboxId: string,
@@ -234,15 +236,21 @@ async function tryReconnect(
 	subdomain: string,
 	timeoutMs: number,
 ): Promise<Omit<LifecycleResult, "acquiredAt"> | null> {
-	// Determine provider by trying E2B first (most common), then Daytona
 	const hasE2B = Boolean(env.E2B_API_KEY);
 	const hasDaytona = Boolean(env.DAYTONA_API_KEY);
 
-	// Try E2B reconnect
+	// ── Try E2B reconnect ────────────────────────────────────────────────────
 	if (hasE2B) {
 		try {
 			const backend = await E2BSandboxBackend.connect(sandboxId, { timeoutMs });
-			const ngrokUrl = computeNgrokUrl(subdomain, "e2b");
+
+			// ngrok may already be running in a reconnected sandbox — poll for
+			// the live URL. If it isn't running, startNgrok will launch it first.
+			let ngrokUrl: string | null = null;
+			if (env.NGROK_AUTHTOKEN) {
+				await startNgrok(backend as unknown as BaseSandbox);
+				ngrokUrl = await fetchLiveNgrokUrl(backend as unknown as BaseSandbox);
+			}
 
 			await updateProjectSandboxState(projectId, {
 				sandboxStatus: "active",
@@ -254,7 +262,7 @@ async function tryReconnect(
 				instance: backend as unknown as BaseSandbox,
 				provider: "e2b",
 				id: backend.id,
-				shouldClose: false, // Reconnected — don't auto-close
+				shouldClose: false,
 				complexity: { tier: "moderate", score: 30, reasons: ["reconnected existing E2B sandbox"] },
 				subdomain,
 				ngrokUrl: ngrokUrl ?? undefined,
@@ -285,16 +293,16 @@ async function tryReconnect(
 		}
 	}
 
-	// Try Daytona reconnect
+	// ── Try Daytona reconnect ────────────────────────────────────────────────
 	if (hasDaytona) {
 		try {
 			const backend = await DaytonaSandboxBackend.reconnect(sandboxId);
-			const ngrokUrl = computeNgrokUrl(subdomain, "daytona");
 
+			// Daytona has its own URL mechanism — no ngrok needed
 			await updateProjectSandboxState(projectId, {
 				sandboxStatus: "active",
 				subdomain,
-				ngrokUrl,
+				ngrokUrl: null,
 			});
 
 			return {
@@ -304,7 +312,7 @@ async function tryReconnect(
 				shouldClose: false,
 				complexity: { tier: "complex", score: 50, reasons: ["reconnected existing Daytona sandbox"] },
 				subdomain,
-				ngrokUrl: ngrokUrl ?? undefined,
+				ngrokUrl: undefined,
 			};
 		} catch (err) {
 			if (isSandboxNotFoundError(err)) {
@@ -327,12 +335,52 @@ async function tryReconnect(
 }
 
 /**
- * Computes the public ngrok URL for a sandbox preview.
- * Only applicable to E2B sandboxes (Daytona has its own URL mechanism).
- * Returns `null` if ngrok is not configured or provider is Daytona.
+ * Starts ngrok as a background process inside the sandbox, tunneling port 8081.
+ * Kills any existing ngrok process first to avoid port conflicts.
+ * The process detaches — logs are written to /tmp/ngrok.log.
  */
-function computeNgrokUrl(subdomain: string, provider: SandboxProvider): string | null {
-	if (provider !== "e2b") return null;
-	if (!env.NGROK_AUTHTOKEN) return null;
-	return `https://${subdomain}.ngrok.app`;
+async function startNgrok(sandbox: BaseSandbox): Promise<void> {
+	await sandbox.execute(
+		"pkill -f 'ngrok http' 2>/dev/null || true; " +
+		"ngrok http 8081 --log=stdout > /tmp/ngrok.log 2>&1 &",
+	);
+	// Brief pause to let ngrok bind before polling begins
+	await new Promise<void>((r) => setTimeout(r, 1_000));
+}
+
+/**
+ * Polls the ngrok local API inside the sandbox to get the actual random
+ * preview URL assigned by the free plan (e.g. https://abc123.ngrok-free.app).
+ * Retries every 2 seconds for up to 30 seconds while the tunnel is starting.
+ * Returns null if ngrok is not running or the tunnel does not come up in time.
+ */
+async function fetchLiveNgrokUrl(sandbox: BaseSandbox): Promise<string | null> {
+	const MAX_ATTEMPTS = 15;
+	const INTERVAL_MS = 2_000;
+
+	for (let i = 0; i < MAX_ATTEMPTS; i++) {
+		const result = await sandbox.execute(
+			"curl -s http://localhost:4040/api/tunnels 2>/dev/null",
+		);
+
+		if (result.exitCode === 0 && result.output) {
+			try {
+				const data = JSON.parse(result.output) as {
+					tunnels?: Array<{ public_url: string; proto: string }>;
+				};
+				const httpsTunnel = data.tunnels?.find((t) => t.proto === "https");
+				if (httpsTunnel?.public_url) {
+					console.info(`[lifecycle] ngrok tunnel ready: ${httpsTunnel.public_url}`);
+					return httpsTunnel.public_url;
+				}
+			} catch {
+				// JSON not ready yet — keep polling
+			}
+		}
+
+		await new Promise<void>((r) => setTimeout(r, INTERVAL_MS));
+	}
+
+	console.warn("[lifecycle] ngrok tunnel did not start within 30s");
+	return null;
 }

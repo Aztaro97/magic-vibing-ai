@@ -31,7 +31,7 @@ export function buildSandboxEnvVars(options: SandboxEnvOptions): Record<string, 
 
 	if (provider === "e2b") {
 		// Expo-specific configuration for E2B sandboxes
-		base.EXPO_TUNNEL_SUBDOMAIN = subdomain;
+		// base.EXPO_TUNNEL_SUBDOMAIN = subdomain;
 		base.PORT = "8081";
 		base.EXPO_WEB_PORT = "8081";
 		base.EXPO_NO_INTERACTIVE = "1";

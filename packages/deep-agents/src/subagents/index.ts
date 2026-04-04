@@ -64,6 +64,13 @@ When writing files, use EXACT parameter names:
 - **Types**: Strict TypeScript. Prefer Interfaces. No 'any'.
 - **Mobile Patterns**: Use SafeAreaView, KeyboardAvoidingView, and Platform-specific logic where necessary.
 
+
+## SHELL RULES
+- Always append \`|| true\` to grep, find, diff, and test commands to prevent
+  non-zero exit codes from aborting the task. Exit code 1 from grep means
+  "no match" — not an error.
+- Example: grep -r "zustand" app/package.json || true
+
 ## Workflow
 1. **Read**: Call 'read_before_edit' to understand component hierarchy.
 2. **Implement**: Write code focusing on mobile responsiveness and touch interactions.
@@ -81,7 +88,11 @@ export const debugAgent: SubAgent = {
 	name: "debug-agent",
 	description:
 		"Debugging specialist for Expo/React Native. " +
-		"USE FOR: Metro bundler errors, Redbox/Yellowbox exceptions, and Native module mismatches.",
+		"USE FOR: ANY error, crash, or failure — including exit status errors, " +
+		"CommandExitError, shell command failures, TypeScript compilation errors, " +
+		"Metro bundler errors, Redbox/Yellowbox exceptions, native module mismatches, " +
+		"import errors, runtime crashes, and unexpected tool output. " +
+		"ALWAYS delegate here when a task fails or a command returns a non-zero exit code.",
 	model: MODEL_FULL,
 	systemPrompt: `
 You are a React Native debugging specialist. You handle mobile-specific failures.
