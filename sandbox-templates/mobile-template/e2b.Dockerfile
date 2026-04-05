@@ -29,22 +29,15 @@ RUN wget -q https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
     && mv ngrok /usr/local/bin/ \
     && rm ngrok-v3-stable-linux-amd64.tgz
 
-# Note: Configure ngrok auth token at runtime via environment variable or startup script
-# RUN apt-get update && apt-get install -y \
-#     git \
-#     curl \
-    # watchman \
-    # && rm -rf /var/lib/apt/lists/*
-
 # Set working directory
 WORKDIR /home/user
 
-# Copy skills-memory (AGENTS.md + skills/) into .deepagents at sandbox root
-# Must happen BEFORE switching to /home/user/app WORKDIR
-COPY --chown=user:user ../skills-memory/ /home/user/.deepagents/
-
-# Install expo/ngrok and pinggy
-# RUN bun install --global @expo/ngrok @pinggy/pinggy
+# Copy skills-memory (AGENTS.md + skills/) into .deepagents at sandbox root.
+# .deepagents/ is pre-staged into the build context by the template:build:mobile
+# script via: cp -r ../skills-memory mobile-template/.deepagents
+# Docker cannot reference paths outside the build context (no ../),
+# so skills-memory must be copied into the build context before docker build runs.
+COPY --chown=user:user ./.deepagents/ /home/user/.deepagents/
 
 # Create app directory and set ownership
 RUN mkdir -p /home/user/app && chown -R user:user /home/user/app
@@ -91,7 +84,6 @@ RUN grep -q "ngrokurl" node_modules/@expo/cli/build/bin/cli && \
 # Switch back to root
 USER root
 
-
 # Expose the default Expo port
 EXPOSE 8081
 
@@ -100,10 +92,6 @@ USER user
 
 # Initialize bun project for claude-sdk
 RUN bun init -y
-
-
-# Install EAS CLI globally
-# RUN bun install --global eas-cli
 
 # Create and set permissions for Metro cache directory
 RUN mkdir -p /tmp/metro-cache
@@ -118,8 +106,6 @@ ENV NODE_OPTIONS="--max_old_space_size=4096"
 # Install expo/ngrok
 RUN bun install @expo/ngrok
 
-# Pinggy is now installed in the app directory, not here
-
 # Install dev dependencies for claude-sdk
 RUN bun install --dev @types/node@^24.0.3
 
@@ -128,9 +114,6 @@ USER root
 
 # Add start script to package.json (also adds typecheck for agent use)
 RUN node -e "const pkg = require('./package.json'); pkg.scripts = pkg.scripts || {}; pkg.scripts.start = 'node executor.mjs'; pkg.scripts['get-structure'] = 'node get-structure.js'; pkg.scripts['edit-file'] = 'node edit-file.js'; pkg.scripts['typecheck'] = 'tsc --noEmit'; require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2));"
-
-# Note: ANTHROPIC_API_KEY should be set at runtime via environment variables
-# Do not hardcode API keys in the Docker image for security reasons
 
 # Return to app directory and switch to user
 WORKDIR /home/user/app
