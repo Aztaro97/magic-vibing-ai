@@ -123,25 +123,6 @@ export class LazySandbox extends BaseSandbox {
 	async execute(command: string): Promise<ExecuteResponse> {
 		const sandbox = await this._ensureInitialized();
 		const result = await sandbox.execute(command);
-
-		// Non-zero exit: ensure the output string always contains a useful
-		// error marker so the model knows the command failed, then return it
-		// as tool content instead of throwing.
-		if (result.exitCode !== 0) {
-			const hasErrorMarker =
-				result.output.includes("STDERR:") ||
-				result.output.includes("error") ||
-				result.output.includes("Error");
-
-			return {
-				output: hasErrorMarker
-					? result.output
-					: `${result.output}\nCommand exited with code ${result.exitCode}`,
-				exitCode: result.exitCode,
-				truncated: result.truncated,
-			};
-		}
-
 		return result;
 	}
 
