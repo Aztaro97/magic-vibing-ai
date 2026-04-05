@@ -125,8 +125,7 @@ export async function resolveProjectSandbox(
 	let ngrokUrl: string | null = null;
 
 	if (resolved.provider === "e2b" && env.NGROK_AUTHTOKEN) {
-		await startNgrok(resolved.instance);
-		ngrokUrl = await fetchLiveNgrokUrl(resolved.instance);
+		ngrokUrl = await startNgrokAndGetUrl(resolved.instance, projectId);
 	}
 
 	// ── 5. Persist sandbox state to project ──────────────────────────────────
@@ -245,11 +244,13 @@ async function tryReconnect(
 			const backend = await E2BSandboxBackend.connect(sandboxId, { timeoutMs });
 
 			// ngrok may already be running in a reconnected sandbox — poll for
-			// the live URL. If it isn't running, startNgrok will launch it first.
+			// the live URL. If it isn't running, startNgrokAndGetUrl will launch it first.
 			let ngrokUrl: string | null = null;
 			if (env.NGROK_AUTHTOKEN) {
-				await startNgrok(backend as unknown as BaseSandbox);
-				ngrokUrl = await fetchLiveNgrokUrl(backend as unknown as BaseSandbox);
+				ngrokUrl = await startNgrokAndGetUrl(
+					backend as unknown as BaseSandbox,
+					projectId,
+				);
 			}
 
 			await updateProjectSandboxState(projectId, {
@@ -335,17 +336,37 @@ async function tryReconnect(
 }
 
 /**
- * Starts ngrok as a background process inside the sandbox, tunneling port 8081.
- * Kills any existing ngrok process first to avoid port conflicts.
- * The process detaches — logs are written to /tmp/ngrok.log.
+ * Unified helper: kills any stale ngrok process, starts a fresh tunnel on
+ * port 8081, waits for the random preview URL from the local API, persists
+ * the URL to the project row, and returns it.
+ *
+ * Consolidates the separate startNgrok + fetchLiveNgrokUrl calls into a
+ * single function so both the provision path and reconnect path share
+ * identical behaviour and always write the URL to the DB.
  */
-async function startNgrok(sandbox: BaseSandbox): Promise<void> {
+async function startNgrokAndGetUrl(
+	sandbox: BaseSandbox,
+	projectId: string,
+): Promise<string | null> {
+	// Kill any existing ngrok process to avoid port conflicts on reconnect
 	await sandbox.execute(
 		"pkill -f 'ngrok http' 2>/dev/null || true; " +
 		"ngrok http 8081 --log=stdout > /tmp/ngrok.log 2>&1 &",
 	);
-	// Brief pause to let ngrok bind before polling begins
-	await new Promise<void>((r) => setTimeout(r, 1_000));
+
+	// Give ngrok 3 seconds to bind before starting to poll.
+	// 3s is enough for cold-start; the poller handles any remaining startup time.
+	await new Promise<void>((r) => setTimeout(r, 3_000));
+
+	const url = await fetchLiveNgrokUrl(sandbox);
+
+	// Always persist the latest URL — even on reconnect this may have changed
+	if (url) {
+		await updateProjectSandboxState(projectId, { ngrokUrl: url });
+		console.info(`[lifecycle] ngrok URL persisted to project ${projectId}: ${url}`);
+	}
+
+	return url;
 }
 
 /**
