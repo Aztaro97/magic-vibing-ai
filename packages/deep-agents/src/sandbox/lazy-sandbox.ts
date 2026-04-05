@@ -109,25 +109,26 @@ export class LazySandbox extends BaseSandbox {
 		return this._inner?.id ?? "lazy-sandbox-pending";
 	}
 
+	/**
+	 * Execute a shell command inside the sandbox.
+	 *
+	 * Non-zero exit codes are returned as tool content (stderr surfaced) rather
+	 * than thrown as CommandExitError. This lets the LLM see the error output
+	 * and self-correct instead of crashing the entire agent run.
+	 */
 	async execute(command: string): Promise<ExecuteResponse> {
 		const sandbox = await this._ensureInitialized();
-		return sandbox.execute(command);
+		const result = await sandbox.execute(command);
+		// Surface stderr back to the model instead of letting the SDK throw
+		if (result.exitCode !== 0) {
+			return {
+				...result,
+				stdout: result.stdout,
+				stderr: result.stderr ?? `Command exited with code ${result.exitCode}`,
+			};
+		}
+		return result;
 	}
-
-	// async execute(command: string): Promise<ExecuteResponse> {
-	// 	const sandbox = await this._ensureInitialized();
-	// 	const result = await sandbox.execute(command);
-	// 	// Surface stderr back to the model instead of letting the SDK throw
-	// 	if (result.exitCode !== 0) {
-	// 		return {
-	// 			...result,
-	// 			// deepagents SDK uses this field to decide whether to throw CommandExitError
-	// 			stdout: result.stdout,
-	// 			stderr: result.stderr ?? `Command exited with code ${result.exitCode}`,
-	// 		};
-	// 	}
-	// 	return result;
-	// }
 
 	async uploadFiles(
 		files: Array<[string, Uint8Array]>,
