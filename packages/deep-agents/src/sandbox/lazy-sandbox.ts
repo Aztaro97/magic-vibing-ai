@@ -112,21 +112,36 @@ export class LazySandbox extends BaseSandbox {
 	/**
 	 * Execute a shell command inside the sandbox.
 	 *
-	 * Non-zero exit codes are returned as tool content (stderr surfaced) rather
-	 * than thrown as CommandExitError. This lets the LLM see the error output
-	 * and self-correct instead of crashing the entire agent run.
+	 * `ExecuteResponse` from deepagents has the shape:
+	 *   { output: string; exitCode: number; truncated: boolean }
+	 *
+	 * On non-zero exit codes the SDK would normally throw CommandExitError.
+	 * Instead we return the response as-is so the LLM sees the error output
+	 * (already encoded in `output` by E2BSandboxBackend as "STDERR:\n...")
+	 * and can self-correct on the next step rather than crashing the run.
 	 */
 	async execute(command: string): Promise<ExecuteResponse> {
 		const sandbox = await this._ensureInitialized();
 		const result = await sandbox.execute(command);
-		// Surface stderr back to the model instead of letting the SDK throw
+
+		// Non-zero exit: ensure the output string always contains a useful
+		// error marker so the model knows the command failed, then return it
+		// as tool content instead of throwing.
 		if (result.exitCode !== 0) {
+			const hasErrorMarker =
+				result.output.includes("STDERR:") ||
+				result.output.includes("error") ||
+				result.output.includes("Error");
+
 			return {
-				...result,
-				stdout: result.stdout,
-				stderr: result.stderr ?? `Command exited with code ${result.exitCode}`,
+				output: hasErrorMarker
+					? result.output
+					: `${result.output}\nCommand exited with code ${result.exitCode}`,
+				exitCode: result.exitCode,
+				truncated: result.truncated,
 			};
 		}
+
 		return result;
 	}
 
