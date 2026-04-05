@@ -48,15 +48,15 @@ function isDangerousCommand(input: unknown): boolean {
 function buildModel() {
 	switch (env.MODEL_PROVIDER) {
 		case "google":
-			return googleGeminiModel({ modelName: "gemini-2.5-pro-preview-05-06" });
+			return googleGeminiModel({ modelName: "gemini-3.1-pro-preview" });
 		case "anthropic":
-			return anthropicModel({ modelName: "claude-opus-4-5" });
+			return anthropicModel({ modelName: "claude-sonnet-4-6" });
 		case "moonshot":
-			return moonshotModel({ modelName: "moonshot-v1-8k" });
+			return moonshotModel({ modelName: "kimi-k2.5" });
 		case "openai":
-			return openaiModel({ modelName: "gpt-4o" });
+			return openaiModel({ modelName: "gpt-5.4" });
 		case "ollama":
-			return ollamaModel({ modelName: "llama3" });
+			return ollamaModel({ modelName: "Kimi-K2.5" });
 		default:
 			throw new Error("Invalid MODEL_PROVIDER");
 	}
