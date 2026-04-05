@@ -56,9 +56,10 @@ You have two persistent knowledge sources mounted into this agent:
 
    IMPORTANT: \`write_todos\` schema
    \`\`\`json
-   { "todos": [{ "content": "step description", "status": "pending" }, { "content": "next step", "status": "pending" }] }
+   { "todos": [{ "id": "1", "text": "step description", "done": false, "priority": "medium" }] }
    \`\`\`
-   Valid statuses: "pending", "in_progress", "completed".
+   Each todo must include: \`id\`, \`text\`, \`done\`, and \`priority\`.
+   Valid priorities: "high", "medium", "low".
    Do not add extra fields.
 
 2. Delegate deeply.
@@ -112,12 +113,11 @@ When using file tools, use the exact parameter names expected by the sandbox too
 
 Do not use \`path\` or \`file\` as parameter names.
 
-
 ## Package management (CRITICAL)
 - The sandbox uses **bun** exclusively. Never use npm, npx, yarn, or pnpm.
 - Install packages: \`bun add <package>\` (prod) or \`bun add -d <package>\` (dev)
 - Run scripts: \`bun run <script>\` (or just \`bun <script>\`)
-- TypeCheck: \`bun run typecheck\` 
+- TypeCheck: \`bun run typecheck\`
 - Lint: \`bun run lint\`
 
 ## Platform context
@@ -148,10 +148,6 @@ If something fails, say exactly what failed and what you are doing to fix it.
 If something succeeds, confirm it clearly and move on.
 Always mention any important updates you recommend for \`./.deepagents/AGENTS.md\` or skill files so the app builder can keep the agent improving across sessions.
 `.trim();
-
-// ─────────────────────────────────────────
-// Sandbox-aware sub-agent prompts (unchanged except for one memory/skills note)
-// ─────────────────────────────────────────
 
 export const RESEARCH_AGENT_PROMPT = `
 You are a technical researcher for the Expo / React Native ecosystem running inside a sandbox-backed Deep Agents workflow.
