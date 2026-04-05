@@ -1,17 +1,11 @@
 //
 // Real, typed tools wired to the sandbox's execute() via FilesystemMiddleware.
 //
-// Design principle: these tools are thin wrappers that format command strings
-// and pass them to the sandbox execute() tool provided by FilesystemMiddleware.
-// They exist so sub-agents see named, schema-validated tools in their context
-// window instead of raw shell strings — which reduces hallucinated commands and
-// makes tool calls inspectable in LangSmith traces.
 
 import { tool } from "@langchain/core/tools";
 import { TavilySearch } from "@langchain/tavily";
 import { z } from "zod";
 import { env } from "../../env";
-
 
 export const bunScript = tool(
 	async ({ script, args }: { script: string; args?: string }) => {
@@ -21,8 +15,7 @@ export const bunScript = tool(
 	{
 		name: "bun_script",
 		description:
-			"Run a bun script from the Expo project's package.json. " +
-			"The sandbox is a single Expo app — no workspace filter needed. " +
+			"Prepare a bun script command from the Expo project's package.json. " +
 			"Examples: script='typecheck' | script='lint' | script='test'",
 		schema: z.object({
 			script: z.string().describe(
@@ -33,9 +26,6 @@ export const bunScript = tool(
 	}
 );
 
-/**
- * Look up where a TypeScript symbol (function, type, variable) is defined
- */
 export const findSymbol = tool(
 	async ({ symbol, kind }: { symbol: string; kind?: string }) => {
 		const exportPattern = `export (${kind ?? "(?:function|const|type|interface|class|enum)"}) ${symbol}\\b`;
@@ -43,14 +33,14 @@ export const findSymbol = tool(
 		return JSON.stringify({
 			findDefinition: { grep: exportPattern, flags: "-rn --include='*.ts' --include='*.tsx'" },
 			findUsages: { grep: usePattern, flags: "-rn --include='*.ts' --include='*.tsx'" },
-			note: "Use the grep tool with each pattern to find definition and usages",
+			note: "Use grep/read_file with these patterns to inspect definition and usages",
 		});
 	},
 	{
 		name: "find_symbol",
 		description:
-			"Find where a TypeScript symbol is exported and where it is imported/used " +
-			"across the Expo project. Always call this before editing or renaming any exported symbol.",
+			"Find where a TypeScript symbol is exported and where it is imported/used. " +
+			"Returns grep patterns for definition and usage discovery.",
 		schema: z.object({
 			symbol: z.string().describe("The exact name of the symbol to find"),
 			kind: z
@@ -61,15 +51,10 @@ export const findSymbol = tool(
 	}
 );
 
-/**
- * Read a file's content and return it with line numbers.
- * Wraps the FilesystemMiddleware read_file tool with a mandatory
- * 'read before edit' convention surfaced as a named tool.
- */
 export const readBeforeEdit = tool(
 	async ({ path, startLine, endLine }: { path: string; startLine?: number; endLine?: number }) => {
 		return JSON.stringify({
-			read_file: { path, startLine, endLine },
+			read_file: { file_path: path, startLine, endLine },
 			note: "Use the read_file tool with these params to fetch the content",
 		});
 	},
@@ -77,7 +62,7 @@ export const readBeforeEdit = tool(
 		name: "read_before_edit",
 		description:
 			"Read a file before editing it. " +
-			"ALWAYS call this before calling write_file or edit_file on any existing file. " +
+			"ALWAYS call this before write_file or edit_file on any existing file. " +
 			"Returns structured params for the read_file tool.",
 		schema: z.object({
 			path: z.string().describe("Absolute or workspace-relative path to the file"),
@@ -87,18 +72,8 @@ export const readBeforeEdit = tool(
 	}
 );
 
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Debug-agent specific tools
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Parse a TypeScript / Node.js stack trace and return the structured frames.
- * Turns raw error text into something the model can reason about precisely.
- */
 export const parseStackTrace = tool(
 	async ({ stackTrace }: { stackTrace: string }) => {
-		// Extract file:line:col references from the raw trace
 		const framePattern = /at\s+(?:(\S+)\s+)?\(?([^)]+):(\d+):(\d+)\)?/g;
 		const frames: Array<{ fn: string; file: string; line: number; col: number }> = [];
 		let match: RegExpExecArray | null;
@@ -112,7 +87,6 @@ export const parseStackTrace = tool(
 			});
 		}
 
-		// Filter out node_modules frames to surface application frames first
 		const appFrames = frames.filter((f) => !f.file.includes("node_modules"));
 		const nodeFrames = frames.filter((f) => f.file.includes("node_modules"));
 
@@ -128,19 +102,13 @@ export const parseStackTrace = tool(
 		name: "parse_stack_trace",
 		description:
 			"Parse a Node.js or TypeScript stack trace into structured frames. " +
-			"Call this first when you receive an error. It extracts the exact file and line " +
-			"to read, separating application frames from node_modules noise.",
+			"Call this first when you receive an error.",
 		schema: z.object({
 			stackTrace: z.string().describe("The raw error message and stack trace text"),
 		}),
 	}
 );
 
-/**
- * Produce a structured hypothesis about why code is failing.
- * Forces the agent to state its reasoning explicitly before touching files,
- * making the debugging process inspectable in the LangSmith trace.
- */
 export const stateHypothesis = tool(
 	async ({
 		hypothesis,
@@ -164,9 +132,7 @@ export const stateHypothesis = tool(
 	{
 		name: "state_hypothesis",
 		description:
-			"State your debugging hypothesis before making any code changes. " +
-			"REQUIRED: call this before every edit attempt. " +
-			"Describe what you believe is wrong, what evidence supports it, and what fix you plan to apply.",
+			"State your debugging hypothesis before making any code changes.",
 		schema: z.object({
 			hypothesis: z.string().describe("One sentence stating the root cause"),
 			evidence: z.array(z.string()).describe("List of observations that support this hypothesis"),
@@ -176,13 +142,6 @@ export const stateHypothesis = tool(
 	}
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Test-agent specific tools
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Generate a structured test plan before writing any test code.
- */
 export const planTestSuite = tool(
 	async ({
 		targetFile,
@@ -208,9 +167,7 @@ export const planTestSuite = tool(
 	{
 		name: "plan_test_suite",
 		description:
-			"Plan a test suite for a TypeScript file before writing any test code. " +
-			"Call this first to establish which symbols to test and which cases to cover. " +
-			"Returns the test file path and a structured plan to write against.",
+			"Plan a test suite for a TypeScript file before writing any test code.",
 		schema: z.object({
 			targetFile: z.string().describe("Path to the source file being tested"),
 			exportedSymbols: z.array(z.string()).describe("Names of exported functions/classes/types to test"),
@@ -225,12 +182,8 @@ export const planTestSuite = tool(
 	}
 );
 
-/**
- * Parse raw Vitest JSON output into a structured test report.
- */
 export const parseTestResults = tool(
 	async ({ output }: { output: string }) => {
-		// Parse the Vitest JSON reporter format
 		try {
 			const data = JSON.parse(output) as {
 				numPassedTests?: number;
@@ -246,11 +199,9 @@ export const parseTestResults = tool(
 			const passing = data.numPassedTests ?? 0;
 			const failing = data.numFailedTests ?? 0;
 			const pending = data.numPendingTests ?? 0;
-
 			const failures = (data.testResults ?? [])
 				.flatMap((f) => (f.testResults ?? []).filter((t) => t.status === "failed"))
 				.map((t) => ({ name: t.fullName, messages: t.failureMessages.slice(0, 3) }));
-
 			const total = passing + failing + pending;
 
 			return JSON.stringify({
@@ -263,7 +214,6 @@ export const parseTestResults = tool(
 				verdict: failing === 0 ? "PASS" : "FAIL",
 			});
 		} catch {
-			// Vitest plain text output fallback
 			const passMatch = output.match(/(\d+)\s+passed/);
 			const failMatch = output.match(/(\d+)\s+failed/);
 			const passed = parseInt(passMatch?.[1] ?? "0", 10);
@@ -282,22 +232,13 @@ export const parseTestResults = tool(
 	{
 		name: "parse_test_results",
 		description:
-			"Parse the raw output from 'pnpm test' or 'vitest run' into a structured report. " +
-			"Call this immediately after running the test command. " +
-			"Returns pass count, fail count, and the names of failing tests.",
+			"Parse the raw output from 'bun run test' or 'vitest run' into a structured report.",
 		schema: z.object({
 			output: z.string().describe("Raw stdout from the test runner command"),
 		}),
 	}
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Doc-agent specific tools
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Generate a JSDoc comment skeleton for a TypeScript function signature.
- */
 export const scaffoldJsdoc = tool(
 	async ({
 		functionName,
@@ -331,9 +272,7 @@ ${throwLines ? throwLines + "\n" : ""} */`.trim();
 	{
 		name: "scaffold_jsdoc",
 		description:
-			"Generate a JSDoc comment skeleton for a TypeScript function. " +
-			"Returns a template with all @param and @returns lines pre-populated. " +
-			"Fill in the TODO placeholders with accurate descriptions.",
+			"Generate a JSDoc comment skeleton for a TypeScript function.",
 		schema: z.object({
 			functionName: z.string().describe("Name of the function being documented"),
 			params: z.array(
@@ -349,15 +288,6 @@ ${throwLines ? throwLines + "\n" : ""} */`.trim();
 	}
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Review-agent specific tools
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Record a finding during code review.
- * Forces structured output instead of free-form text, making the review
- * report machine-parseable by the admin UI.
- */
 export const recordFinding = tool(
 	async ({
 		severity,
@@ -389,53 +319,14 @@ export const recordFinding = tool(
 	{
 		name: "record_finding",
 		description:
-			"Record a code review finding. Call this once for every distinct issue found. " +
-			"Do NOT batch multiple issues into one call. " +
-			"Findings are aggregated into the final review report.",
+			"Record a code review finding.",
 		schema: z.object({
 			severity: z.enum(["critical", "high", "medium", "low"]),
 			file: z.string().describe("File path where the issue was found"),
 			line: z.number().int().optional().describe("Line number of the issue (omit if spans multiple lines)"),
-			rule: z.string().describe("Short rule name, e.g. 'missing-auth-guard' or 'sql-injection'"),
+			rule: z.string().describe("Short rule name"),
 			description: z.string().describe("One sentence describing the issue clearly"),
 			suggestedFix: z.string().describe("One sentence describing the minimal fix"),
-		}),
-	}
-);
-
-/**
- * Check whether a tRPC procedure has a valid auth guard.
- */
-export const checkAuthGuard = tool(
-	async ({ procedureCode }: { procedureCode: string }) => {
-		const usesProtected = /protectedProcedure/.test(procedureCode);
-		const usesPublic = /publicProcedure/.test(procedureCode);
-		const accessesCtx = /ctx\.session|ctx\.user/.test(procedureCode);
-		const accessesDb = /ctx\.db|db\./.test(procedureCode);
-
-		const verdict = usesProtected
-			? "protected"
-			: usesPublic && !accessesDb
-				? "public-safe"
-				: "possibly-missing-auth";
-
-		const issues: string[] = [];
-		if (!usesProtected && accessesDb) {
-			issues.push("Procedure accesses database but does not use protectedProcedure");
-		}
-		if (!usesProtected && accessesCtx) {
-			issues.push("Procedure accesses ctx.session/ctx.user without being protected");
-		}
-
-		return JSON.stringify({ verdict, usesProtected, usesPublic, accessesCtx, accessesDb, issues });
-	},
-	{
-		name: "check_auth_guard",
-		description:
-			"Check whether a tRPC procedure snippet correctly uses protectedProcedure for auth. " +
-			"Paste the procedure definition code. Returns a verdict and any auth issues found.",
-		schema: z.object({
-			procedureCode: z.string().describe("The tRPC procedure code to analyze"),
 		}),
 	}
 );
@@ -462,17 +353,11 @@ export const internetSearch = tool(
 		description: "Run an internet search to find technical documentation, Expo SDK updates, or troubleshoot errors.",
 		schema: z.object({
 			query: z.string().describe("The research query."),
-			depth: z.enum(["basic", "advanced"]).optional().describe("Search depth."),
 			maxResults: z.number().optional().default(5),
 			includeRawContent: z.boolean().optional().default(false),
 		}),
 	},
 );
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
 function capitalize(s: string): string {
 	return s

@@ -17,10 +17,6 @@ import { env } from "../../env";
 const MODEL_FULL = env.AGENT_MODEL;
 const MODEL_CHEAP = env.AGENT_SUBAGENT_MODEL;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ─── 1. CODE AGENT ───────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const codeAgent: SubAgent = {
 	name: "code-agent",
 	description:
@@ -64,7 +60,6 @@ When writing files, use EXACT parameter names:
 - **Types**: Strict TypeScript. Prefer Interfaces. No 'any'.
 - **Mobile Patterns**: Use SafeAreaView, KeyboardAvoidingView, and Platform-specific logic where necessary.
 
-
 ## SHELL RULES
 - Always append \`|| true\` to grep, find, diff, and test commands to prevent
   non-zero exit codes from aborting the task. Exit code 1 from grep means
@@ -74,15 +69,11 @@ When writing files, use EXACT parameter names:
 ## Workflow
 1. **Read**: Call 'read_before_edit' to understand component hierarchy.
 2. **Implement**: Write code focusing on mobile responsiveness and touch interactions.
-3. **Verify**: Run 'npm_script' with "typecheck".
-4. **Lint**: Ensure styling and logic follow project rules via "lint".
+3. **Verify**: Run 'bun_script' with "typecheck".
+4. **Lint**: Ensure styling and logic follow project rules via 'bun_script' with "lint".
 `.trim(),
 	tools: [bunScript, findSymbol, readBeforeEdit],
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ─── 2. DEBUG AGENT ──────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const debugAgent: SubAgent = {
 	name: "debug-agent",
@@ -120,10 +111,6 @@ Note: Generated apps use mock/dummy data, NOT databases. Do not create DB schema
 	tools: [internetSearch, parseStackTrace, stateHypothesis, readBeforeEdit, bunScript],
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ─── 3. TEST AGENT ───────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const testAgent: SubAgent = {
 	name: "test-agent",
 	description:
@@ -151,14 +138,10 @@ When writing files, use EXACT parameter names:
 ## Workflow
 1. Plan the test suite (edge cases like 'no internet' or 'small screen').
 2. Write tests in the same directory as the component (e.g., Component.test.tsx).
-3. Run 'npm test' and parse results.
+3. Run 'bun_script' with 'test' and parse results.
 `.trim(),
 	tools: [planTestSuite, readBeforeEdit, bunScript, parseTestResults],
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ─── 4. DOC AGENT ────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const docAgent: SubAgent = {
 	name: "doc-agent",
@@ -183,10 +166,6 @@ Follow standard JSDoc rules and keep READMEs focused on the single root director
 `.trim(),
 	tools: [scaffoldJsdoc, readBeforeEdit, bunScript],
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ─── 5. REVIEW AGENT ─────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const reviewAgent: SubAgent = {
 	name: "review-agent",
@@ -213,8 +192,6 @@ Verdict: APPROVE, REQUEST CHANGES, or BLOCK.
 	tools: [recordFinding, readBeforeEdit, bunScript],
 };
 
-
-
 export const researchAnalystAgent: SubAgent = {
 	name: "research-analyst",
 	description:
@@ -222,9 +199,7 @@ export const researchAnalystAgent: SubAgent = {
 		"USE FOR: Looking up official documentation, verifying library compatibility with the current Expo SDK, " +
 		"finding GitHub issue workarounds, and discovering best practices. " +
 		"Always call this agent before implementing unfamiliar libraries.",
-
 	model: MODEL_CHEAP,
-
 	systemPrompt: `
 You are an expert technical researcher for a React Native Expo codebase.
 Your primary directive is to provide "Ground Truth" documentation to the supervisor and other sub-agents.
@@ -241,44 +216,34 @@ Note: Generated apps use mock/dummy data, NOT databases. Do not recommend DB set
 
 1. **Plan Your Search**:
    Use the \`write_todos\` tool to list the specific modules, versions, or concepts you need to verify.
-   Schema: { "todos": [{ "content": "description", "status": "pending" }] }. Only use 'todos' array — no other fields.
+   Schema: { "todos": [{ "id": "1", "text": "description", "done": false, "priority": "medium" }] }.
 
-2. **Discover**: 
-   Use the \`internet_search\` tool. 
-   - ALWAYS prioritize official sources. Use the 'site' parameter for:
-     - \`site:docs.expo.dev\` (Expo SDK and Router)
-     - \`site:reactnative.dev\` (Core RN components)
-     - \`site:github.com\` (For specific issue threads or library READMEs)
+2. **Discover**:
+   Use the \`internet_search\` tool.
+   - ALWAYS prioritize official sources.
 
-3. **Deep Read**: 
-   Search snippets are often insufficient. Use the \`fetch_url\` tool to read the full markdown content of the most promising documentation pages. 
+3. **Deep Read**:
+   Search snippets are often insufficient. Read the full documentation pages when possible.
    Look specifically for:
-   - Compatibility with the current Expo SDK (e.g., SDK 50+).
+   - Compatibility with the current Expo SDK.
    - Peer dependency requirements.
-   - Platform-specific setup steps (iOS Info.plist / Android AndroidManifest.xml) if prebuild is used.
+   - Platform-specific setup steps if prebuild is used.
 
-4. **Synthesize and Store**: 
-   DO NOT dump massive payloads of text into your final response. 
-   Instead, use the \`write_to_file\` tool to save your findings as a markdown artifact.
+4. **Synthesize and Store**:
+   DO NOT dump massive payloads of text into your final response.
+   Instead, use the \`write_file\` tool to save your findings as a markdown artifact.
    - Path format: \`src/docs/research_<topic_name>.md\`
-   - Include: 
+   - Include:
      - Source URLs.
-     - Required installation commands (npm/expo install).
+     - Required installation commands.
      - Minimal, verified code examples.
-     - Any warnings about mobile-specific caveats (e.g., "This module does not work on Expo Go").
+     - Any warnings about mobile-specific caveats.
 
-5. **Report**: 
+5. **Report**:
    Inform the supervisor that the research is complete and provide the exact file path where the findings are saved.
 `.trim(),
-
-	tools: [
-		internetSearch,
-	],
+	tools: [internetSearch],
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Exported collections
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const ALL_SUBAGENTS: SubAgent[] = [
 	researchAnalystAgent,

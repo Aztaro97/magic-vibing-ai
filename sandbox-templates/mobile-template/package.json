@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "start": "expo start",
     "start:ios": "bun start --ios",
     "start:no-ci": "FORCE_COLOR=1 CI=false expo start --tunnel --port 8082",
