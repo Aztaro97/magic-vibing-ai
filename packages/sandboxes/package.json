@@ -65,10 +65,10 @@
     "@acme/db": "workspace:*",
     "@acme/validators": "workspace:*",
     "@daytonaio/sdk": "^0.21.0",
-    "@e2b/code-interpreter": "^2.3.3",
+    "@e2b/code-interpreter": "^2.4.0",
     "@langchain/daytona": "^0.1.2",
     "deepagents": "^1.6.3",
-    "e2b": "^2.14.1",
+    "e2b": "^2.19.0",
     "vitest": "^4.1.0",
     "zod": "^3.23.8"
   },
