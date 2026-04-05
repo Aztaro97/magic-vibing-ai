@@ -4,6 +4,7 @@ import type {
 	FileUploadResponse,
 } from "deepagents";
 import { BaseSandbox } from "deepagents";
+import { CommandExitError } from "e2b";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LazySandbox
@@ -115,34 +116,32 @@ export class LazySandbox extends BaseSandbox {
 	 * `ExecuteResponse` from deepagents has the shape:
 	 *   { output: string; exitCode: number; truncated: boolean }
 	 *
-	 * On non-zero exit codes the SDK would normally throw CommandExitError.
-	 * Instead we return the response as-is so the LLM sees the error output
-	 * (already encoded in `output` by E2BSandboxBackend as "STDERR:\n...")
-	 * and can self-correct on the next step rather than crashing the run.
+	 * The inner E2BSandboxBackend throws CommandExitError on non-zero exit codes
+	 * before we can inspect the result. We catch it here and return a valid
+	 * ExecuteResponse so the LLM sees the error output (stdout + stderr) and can
+	 * self-correct on the next step rather than crashing the entire run.
+	 *
+	 * Only real infrastructure errors (TimeoutError, AuthenticationError, etc.)
+	 * are re-thrown — those are unrecoverable and should surface to the caller.
 	 */
 	async execute(command: string): Promise<ExecuteResponse> {
 		const sandbox = await this._ensureInitialized();
-		const result = await sandbox.execute(command);
-
-		// Non-zero exit: ensure the output string always contains a useful
-		// error marker so the model knows the command failed, then return it
-		// as tool content instead of throwing.
-		if (result.exitCode !== 0) {
-			const hasErrorMarker =
-				result.output.includes("STDERR:") ||
-				result.output.includes("error") ||
-				result.output.includes("Error");
-
-			return {
-				output: hasErrorMarker
-					? result.output
-					: `${result.output}\nCommand exited with code ${result.exitCode}`,
-				exitCode: result.exitCode,
-				truncated: result.truncated,
-			};
+		try {
+			return await sandbox.execute(command);
+		} catch (err) {
+			// CommandExitError means the command ran but exited with a non-zero code.
+			// This is recoverable — return it as a normal ExecuteResponse so the LLM
+			// can see the output (e.g. tsc errors, ls: no such file) and self-correct.
+			if (err instanceof CommandExitError) {
+				return {
+					output: err.output ?? `Command exited with code ${err.exitCode}`,
+					exitCode: err.exitCode,
+					truncated: false,
+				};
+			}
+			// Re-throw real infrastructure errors (TimeoutError, AuthenticationError, etc.)
+			throw err;
 		}
-
-		return result;
 	}
 
 	async uploadFiles(
