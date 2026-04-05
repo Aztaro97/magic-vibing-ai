@@ -134,7 +134,7 @@ export class LazySandbox extends BaseSandbox {
 			// can see the output (e.g. tsc errors, ls: no such file) and self-correct.
 			if (err instanceof CommandExitError) {
 				return {
-					output: err.output ?? `Command exited with code ${err.exitCode}`,
+					output: err.message ?? `Command exited with code ${err.exitCode}`,
 					exitCode: err.exitCode,
 					truncated: false,
 				};
