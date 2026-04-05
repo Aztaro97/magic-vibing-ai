@@ -39,10 +39,6 @@ RUN wget -q https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
 # Set working directory
 WORKDIR /home/user
 
-# Copy skills-memory (AGENTS.md + skills/) into .deepagents at sandbox root
-# Must happen BEFORE switching to /home/user/app WORKDIR
-COPY --chown=user:user ../skills-memory/ /home/user/.deepagents/
-
 # Install expo/ngrok and pinggy
 # RUN bun install --global @expo/ngrok @pinggy/pinggy
 
