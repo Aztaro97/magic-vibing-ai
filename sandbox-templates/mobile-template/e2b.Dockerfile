@@ -39,6 +39,10 @@ RUN wget -q https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
 # Set working directory
 WORKDIR /home/user
 
+# Copy skills-memory (AGENTS.md + skills/) into .deepagents at sandbox root
+# Must happen BEFORE switching to /home/user/app WORKDIR
+COPY --chown=user:user ../skills-memory/ /home/user/.deepagents/
+
 # Install expo/ngrok and pinggy
 # RUN bun install --global @expo/ngrok @pinggy/pinggy
 
@@ -122,8 +126,8 @@ RUN bun install --dev @types/node@^24.0.3
 # Switch back to root for file operations
 USER root
 
-# Add start script to package.json
-RUN node -e "const pkg = require('./package.json'); pkg.scripts = pkg.scripts || {}; pkg.scripts.start = 'node executor.mjs'; pkg.scripts['get-structure'] = 'node get-structure.js'; pkg.scripts['edit-file'] = 'node edit-file.js'; require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2));"
+# Add start script to package.json (also adds typecheck for agent use)
+RUN node -e "const pkg = require('./package.json'); pkg.scripts = pkg.scripts || {}; pkg.scripts.start = 'node executor.mjs'; pkg.scripts['get-structure'] = 'node get-structure.js'; pkg.scripts['edit-file'] = 'node edit-file.js'; pkg.scripts['typecheck'] = 'tsc --noEmit'; require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2));"
 
 # Note: ANTHROPIC_API_KEY should be set at runtime via environment variables
 # Do not hardcode API keys in the Docker image for security reasons
