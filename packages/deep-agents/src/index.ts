@@ -45,6 +45,15 @@ export type {
 // Without this, the graph falls back to StoreBackend (filesystem-only).
 // The LazySandbox auto-selects E2B or Daytona via @acme/sandboxes router.
 const hasSandboxProvider = Boolean(env.E2B_API_KEY) || Boolean(env.DAYTONA_API_KEY);
+
+if (!hasSandboxProvider) {
+	console.warn(
+		"[deep-agents] No sandbox provider key found. " +
+		"Shell execute() calls will fail at runtime. " +
+		"Set E2B_API_KEY or DAYTONA_API_KEY in your .env to enable sandbox execution.",
+	);
+}
+
 const sandbox = hasSandboxProvider ? new LazySandbox() : undefined;
 
 // Ensure lazy-provisioned sandbox is cleaned up on process exit (prevents
@@ -56,4 +65,3 @@ if (sandbox) {
 }
 
 export const graph = createMagicVibingAgent({ sandbox });
-
