@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { CodeIcon, EyeIcon, Loader2Icon } from "lucide-react";
@@ -92,7 +90,14 @@ function ProjectView({ projectId }: Props) {
             <TabsContent value="preview" className="mt-0 flex-1 overflow-hidden">
               <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error} label="preview" />}>
                 <Suspense fallback={<LoadingSkeleton label="Loading preview…" />}>
-                  <FragmentWeb fragment={activeFragment} />
+                  {/* Fix: FragmentWeb expects `data` prop, not `fragment` */}
+                  {activeFragment ? (
+                    <FragmentWeb data={activeFragment} />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <p className="text-muted-foreground text-sm">No preview yet — run the agent to generate one</p>
+                    </div>
+                  )}
                 </Suspense>
               </ErrorBoundary>
             </TabsContent>

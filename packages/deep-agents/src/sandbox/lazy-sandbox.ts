@@ -38,6 +38,14 @@ export class LazySandbox extends BaseSandbox {
 	private _factory: (() => Promise<BaseSandbox>) | undefined;
 
 	/**
+	 * Holds the live ngrok random preview URL once the tunnel is up.
+	 * Only populated for E2B sandboxes in auto-provision mode.
+	 * Consumers (e.g. AgentPanel) should read project.ngrokUrl from the DB
+	 * via tRPC; this field is a dev-server convenience reference.
+	 */
+	public ngrokUrl: string | null = null;
+
+	/**
 	 * @param factory  Optional async factory that returns a ready `BaseSandbox`.
 	 *                 When omitted, auto-provisions via `@acme/sandboxes` router.
 	 */
@@ -59,7 +67,8 @@ export class LazySandbox extends BaseSandbox {
 					sandbox = await this._factory();
 				} else {
 					// Auto-provision via sandboxes router (dev server path)
-					sandbox = await LazySandbox._autoProvision();
+					// Also starts ngrok and stores the random preview URL.
+					sandbox = await LazySandbox._autoProvision(this);
 				}
 
 				this._inner = sandbox as unknown as SandboxInstance;
@@ -79,12 +88,16 @@ export class LazySandbox extends BaseSandbox {
 	 * Dynamically imports to avoid hard compile-time dependency.
 	 * Selects E2B or Daytona based on available API keys and classification.
 	 *
+	 * After provisioning an E2B sandbox, starts ngrok on port 8081 and polls
+	 * localhost:4040/api/tunnels to capture the random preview URL
+	 * (e.g. https://abc123.ngrok-free.app). Stores URL in `owner.ngrokUrl`.
+	 *
 	 * NOTE: This path is only used by the LangGraph dev server graph
 	 * (`export const graph` in index.ts). Production API calls inject the
 	 * sandbox via factory from `resolveProjectSandbox()` instead.
 	 * orgId is intentionally omitted — dev-server mode bypasses concurrency limits.
 	 */
-	private static async _autoProvision(): Promise<BaseSandbox> {
+	private static async _autoProvision(owner: LazySandbox): Promise<BaseSandbox> {
 		const { resolveSandbox } = await import("@acme/sandboxes");
 
 		const resolved = await resolveSandbox({
@@ -103,7 +116,76 @@ export class LazySandbox extends BaseSandbox {
 			);
 		}
 
+		// Start ngrok on E2B sandboxes and capture the random preview URL.
+		// This mirrors the lifecycle manager's startNgrokAndGetUrl() behaviour
+		// so the dev server path gets the same URL surfacing as the production path.
+		if (resolved.provider === "e2b") {
+			try {
+				const env = await import("../../env").then((m) => m.env);
+				if (env.NGROK_AUTHTOKEN) {
+					const url = await LazySandbox._startNgrokAndGetUrl(
+						resolved.instance as unknown as SandboxInstance,
+					);
+					if (url) {
+						owner.ngrokUrl = url;
+						console.info(`[LazySandbox] ngrok URL ready: ${url}`);
+					}
+				}
+			} catch (err) {
+				// ngrok failure is non-fatal — sandbox still works without tunnel
+				console.warn("[LazySandbox] ngrok setup failed (non-fatal):", err);
+			}
+		}
+
 		return resolved.instance;
+	}
+
+	/**
+	 * Starts ngrok on port 8081 inside the sandbox and polls the local API
+	 * until the random preview URL is available.
+	 * Returns the URL or null if tunnel startup times out.
+	 */
+	private static async _startNgrokAndGetUrl(
+		sandbox: SandboxInstance,
+	): Promise<string | null> {
+		// Kill any stale ngrok process and start a fresh tunnel on port 8081.
+		// --log=stdout keeps it in foreground but we background via `&`.
+		await sandbox.execute(
+			"pkill -f 'ngrok http' 2>/dev/null || true; " +
+			"ngrok http 8081 --log=stdout > /tmp/ngrok.log 2>&1 &",
+		);
+
+		// Give ngrok 3 seconds to bind before polling.
+		await new Promise<void>((r) => setTimeout(r, 3_000));
+
+		// Poll localhost:4040/api/tunnels every 2 s for up to 30 s.
+		const MAX_ATTEMPTS = 15;
+		const INTERVAL_MS = 2_000;
+
+		for (let i = 0; i < MAX_ATTEMPTS; i++) {
+			const result = await sandbox.execute(
+				"curl -s http://localhost:4040/api/tunnels 2>/dev/null",
+			);
+
+			if (result.exitCode === 0 && result.output) {
+				try {
+					const data = JSON.parse(result.output) as {
+						tunnels?: Array<{ public_url: string; proto: string }>;
+					};
+					const httpsTunnel = data.tunnels?.find((t) => t.proto === "https");
+					if (httpsTunnel?.public_url) {
+						return httpsTunnel.public_url;
+					}
+				} catch {
+					// JSON not ready yet — keep polling
+				}
+			}
+
+			await new Promise<void>((r) => setTimeout(r, INTERVAL_MS));
+		}
+
+		console.warn("[LazySandbox] ngrok tunnel did not start within 30s");
+		return null;
 	}
 
 	get id(): string {
