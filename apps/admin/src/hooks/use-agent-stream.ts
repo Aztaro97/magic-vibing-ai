@@ -98,20 +98,26 @@ export function useAgentStream({
     },
 
     onFinish(messages) {
+      // Fragment extraction: try LLM JSON output first (for agents that output
+      // structured JSON), then fall back to the project.ngrokUrl DB poll in
+      // AgentPanel — which is the reliable path for the LangGraph server.
       if (!onFragment) return;
       const lastAi = [...messages].reverse().find((m) => m._getType() === "ai");
       if (!lastAi || typeof lastAi.content !== "string") return;
       try {
         const data = JSON.parse(lastAi.content);
+        // Only trigger the fragment callback if we have both required fields.
+        // If sandboxUrl is missing, AgentPanel's ngrokUrl poll handles it instead.
         if (data?.sandboxUrl && data?.files) {
           onFragment({
             sandboxUrl: data.sandboxUrl,
-            files: data.files,
-            title: data.title ?? "Fragment",
+            files:      data.files,
+            title:      data.title ?? "Fragment",
           });
         }
       } catch {
-        /* streaming text */
+        // Streamed prose — not JSON. The ngrokUrl poll in AgentPanel will
+        // surface the preview URL as soon as it's written to the DB.
       }
     },
   });

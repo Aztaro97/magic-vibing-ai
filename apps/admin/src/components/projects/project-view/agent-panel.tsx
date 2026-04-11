@@ -1,8 +1,7 @@
-
 "use client";
 
 import type { AIMessage } from "@langchain/core/messages";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
@@ -108,6 +107,22 @@ export default function AgentPanel({ projectId, sessionId, setActiveFragment }: 
     trpc.messages.getMany.queryOptions({ projectId })
   );
 
+  // ── Poll project for ngrokUrl ────────────────────────────────────────────
+  // The LangGraph server path provisions the sandbox lazily on first tool use.
+  // Once ngrok is running, manager.ts writes the URL to project.ngrokUrl.
+  // We poll every 3 s so the preview panel lights up as soon as it's ready
+  // without requiring the LLM to output the URL as structured JSON.
+  const { data: liveProject } = useQuery({
+    ...trpc.projects.getOne.queryOptions({ id: projectId }),
+    // Refetch every 3 s while we have no ngrokUrl yet. Once we have a URL
+    // the fragment is already set and the panel shows the preview, so we
+    // stop polling to avoid unnecessary DB hits.
+    refetchInterval: (query) => {
+      const url = (query.state.data as typeof project | undefined)?.ngrokUrl;
+      return url ? false : 3_000;
+    },
+  });
+
   // ── Stream ──────────────────────────────────────────────────────────────
   const { messages, isStreaming, toolCalls, interrupt, error, canRejoin, send, approveHitl, rejoin, isReady } =
     useAgentStream({
@@ -125,6 +140,30 @@ export default function AgentPanel({ projectId, sessionId, setActiveFragment }: 
         });
       },
     });
+
+  // ── Sync ngrokUrl from DB poll into the active fragment ──────────────────
+  // When the LangGraph server path finishes sandbox provisioning, the ngrok
+  // URL appears in project.ngrokUrl (via the lifecycle manager writing to DB).
+  // We detect it here and push it into activeFragment so FragmentWeb can
+  // display the preview — without relying on the LLM to output it as JSON.
+  useEffect(() => {
+    const url = liveProject?.ngrokUrl ?? project.ngrokUrl;
+    if (!url) return;
+
+    setActiveFragment((prev) => {
+      // Already have a fragment with this URL — nothing to do.
+      if (prev?.sandboxUrl === url) return prev;
+      return {
+        id:         prev?.id ?? crypto.randomUUID(),
+        messageId:  prev?.messageId ?? "",
+        sandboxUrl: url,
+        title:      prev?.title ?? "Preview",
+        files:      prev?.files ?? {},
+        createdAt:  prev?.createdAt ?? new Date(),
+        updatedAt:  new Date(),
+      };
+    });
+  }, [liveProject?.ngrokUrl, project.ngrokUrl]);
 
   // ── Auto-send for NEW projects ──────────────────────────────────────────
   //
