@@ -10,17 +10,18 @@ export type { SandboxProvider };
 // ─────────────────────────────────────────
 
 export type AgentEventType =
-  | "thinking" // supervisor is planning
-  | "tool_start" // tool invocation begins
-  | "tool_end" // tool invocation result
-  | "token" // streamed token from the model
-  | "todo_update" // write_todos fired, todo list changed
+  | "thinking"       // supervisor is planning
+  | "tool_start"     // tool invocation begins
+  | "tool_end"       // tool invocation result
+  | "token"          // streamed token from the model
+  | "todo_update"    // write_todos fired, todo list changed
   | "subagent_start" // task tool handed off to a sub-agent
-  | "subagent_end" // sub-agent returned
-  | "hitl_pause" // agent paused awaiting human approval
-  | "hitl_resume" // human approved/rejected, agent resumed
-  | "done" // run complete
-  | "error"; // fatal error
+  | "subagent_end"   // sub-agent returned
+  | "hitl_pause"     // agent paused awaiting human approval
+  | "hitl_resume"    // human approved/rejected, agent resumed
+  | "sandbox_ready"  // sandbox + ngrok tunnel confirmed live
+  | "done"           // run complete
+  | "error";         // fatal error
 
 export interface AgentEvent {
   type: AgentEventType;
@@ -44,6 +45,17 @@ export interface AgentEventData {
     allowedDecisions: string[];
   };
   hitl_resume: { decision: "approve" | "edit" | "reject"; reason?: string };
+  /**
+   * Emitted once the E2B sandbox is provisioned and the ngrok tunnel is
+   * confirmed live. Clients (mobile app, web dashboard) should subscribe
+   * to this event to update the preview URL without polling the DB.
+   */
+  sandbox_ready: {
+    sandboxId: string;
+    provider: SandboxProvider;
+    /** Stable custom domain: https://{projectId}.ngrok.dev */
+    ngrokUrl: string;
+  };
   done: { summary: string; durationMs: number };
   error: { message: string; code?: string };
 }
@@ -77,8 +89,13 @@ export interface AgentSessionMeta {
   sessionId: string;
   projectId: string;
   userId: string;
-  threadId: string; // LangGraph thread ID for checkpointing
-  sandboxId?: string; // Active sandbox ID (E2B or Daytona)
+  /**
+   * LangGraph thread ID for checkpointing.
+   * Set equal to projectId so all sessions for the same project share one
+   * thread — enabling seamless resume across reconnects and HITL pauses.
+   */
+  threadId: string;
+  sandboxId?: string;
   sandboxProvider?: SandboxProvider;
   status: "running" | "paused" | "done" | "error";
   createdAt: Date;

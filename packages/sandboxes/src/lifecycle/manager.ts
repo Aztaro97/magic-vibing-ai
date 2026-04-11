@@ -4,6 +4,20 @@
 // Orchestrates sandbox create/resume/connect using the `project` table as
 // the source of truth. Handles both E2B and Daytona providers, env var
 // injection, subdomain/ngrok URL management, and concurrency tracking.
+//
+// ngrok custom domain strategy
+// ─────────────────────────────
+// Every project gets a deterministic, stable public URL:
+//   https://{projectId}.ngrok.dev
+//
+// This requires:
+//   1. A paid ngrok account with the domain registered.
+//   2. NGROK_AUTHTOKEN set in the server environment.
+//
+// The tunnel is started with:
+//   ngrok http --url={projectId}.ngrok.dev 8081
+//
+// On reconnect the same domain is reused — no URL churn between sessions.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { BaseSandbox } from "deepagents";
@@ -40,7 +54,7 @@ import {
  * 2. If active sandbox exists → try reconnect (E2B or Daytona)
  * 3. On "not found" → clear stale state, fall through to create
  * 4. If no sandbox → delegate to `resolveSandbox()` for classification
- * 5. After acquisition → start ngrok, poll for live URL, persist to project
+ * 5. After acquisition → start ngrok with custom domain, verify URL, persist
  *
  * Returns `null` when no sandbox providers are configured.
  */
@@ -58,11 +72,15 @@ export async function resolveProjectSandbox(
 	const subdomain = getExpoSubdomain(projectState.name);
 	const timeoutMs = getTimeoutForUserTier(userTier);
 
+	// Deterministic custom domain — stable across sessions for this project
+	const ngrokDomain = `${projectId}.ngrok.dev`;
+
 	// ── 1. Try reconnecting to an existing active sandbox ─────────────────────
 	if (projectState.sandboxId && projectState.sandboxStatus === "active") {
 		const reconnected = await tryReconnect(
 			projectState.sandboxId,
 			projectId,
+			ngrokDomain,
 			subdomain,
 			timeoutMs,
 		);
@@ -80,6 +98,7 @@ export async function resolveProjectSandbox(
 		const resumed = await tryReconnect(
 			projectState.sandboxId,
 			projectId,
+			ngrokDomain,
 			subdomain,
 			timeoutMs,
 		);
@@ -99,6 +118,7 @@ export async function resolveProjectSandbox(
 
 	const sandboxEnvVars = buildSandboxEnvVars({
 		subdomain,
+		projectId,
 		provider: anticipatedProvider,
 		extraEnv: hints.envVars,
 		ngrokAuthToken: env.NGROK_AUTHTOKEN ?? undefined,
@@ -117,15 +137,13 @@ export async function resolveProjectSandbox(
 
 	if (!resolved) return null;
 
-	// ── 4. Start ngrok and fetch the live random preview URL ─────────────────
-	// ngrok assigns a random URL (e.g. https://abc123.ngrok-free.app) on the
-	// free plan — it cannot be pre-computed. We start ngrok as a background
-	// process inside the sandbox, then poll localhost:4040/api/tunnels until
-	// the tunnel is up and the URL is available.
+	// ── 4. Start ngrok with custom domain and verify the live URL ────────────
+	// We use --url={projectId}.ngrok.dev so the domain is stable and
+	// deterministic — the same URL survives sandbox restarts and reconnects.
 	let ngrokUrl: string | null = null;
 
 	if (resolved.provider === "e2b" && env.NGROK_AUTHTOKEN) {
-		ngrokUrl = await startNgrokAndGetUrl(resolved.instance, projectId);
+		ngrokUrl = await startNgrokAndGetUrl(resolved.instance, projectId, ngrokDomain);
 	}
 
 	// ── 5. Persist sandbox state to project ──────────────────────────────────
@@ -135,9 +153,6 @@ export async function resolveProjectSandbox(
 		subdomain,
 		ngrokUrl,
 	});
-
-	// Note: concurrency increment is handled inside resolveSandbox() by the
-	// provisioning functions (provisionE2B/provisionDaytona). No increment here.
 
 	console.info(
 		`[lifecycle] ${sessionId}: Sandbox provisioned ` +
@@ -227,11 +242,13 @@ export function releaseSandbox(orgId?: string): void {
  * Attempts to reconnect to an existing sandbox by ID.
  * Returns `LifecycleResult` on success, `null` on failure.
  * On "not found" errors, clears the stale sandbox state from the project.
- * On successful E2B reconnect, polls for the live ngrok URL.
+ * On successful E2B reconnect, restarts the ngrok tunnel with the same
+ * custom domain so the URL remains stable.
  */
 async function tryReconnect(
 	sandboxId: string,
 	projectId: string,
+	ngrokDomain: string,
 	subdomain: string,
 	timeoutMs: number,
 ): Promise<Omit<LifecycleResult, "acquiredAt"> | null> {
@@ -243,13 +260,14 @@ async function tryReconnect(
 		try {
 			const backend = await E2BSandboxBackend.connect(sandboxId, { timeoutMs });
 
-			// ngrok may already be running in a reconnected sandbox — poll for
-			// the live URL. If it isn't running, startNgrokAndGetUrl will launch it first.
+			// Restart (or re-verify) the tunnel using the same custom domain.
+			// Even on reconnect the domain never changes — no URL churn.
 			let ngrokUrl: string | null = null;
 			if (env.NGROK_AUTHTOKEN) {
 				ngrokUrl = await startNgrokAndGetUrl(
 					backend as unknown as BaseSandbox,
 					projectId,
+					ngrokDomain,
 				);
 			}
 
@@ -279,7 +297,6 @@ async function tryReconnect(
 				return null;
 			}
 
-			// Not a "not found" error — might be a Daytona sandbox ID
 			if (hasDaytona) {
 				// Fall through to Daytona
 			} else {
@@ -336,46 +353,73 @@ async function tryReconnect(
 }
 
 /**
- * Unified helper: kills any stale ngrok process, starts a fresh tunnel on
- * port 8081, waits for the random preview URL from the local API, persists
- * the URL to the project row, and returns it.
+ * Configures ngrok auth, kills any stale tunnel, starts a fresh tunnel on
+ * port 8081 using the deterministic custom domain ({projectId}.ngrok.dev),
+ * waits for the tunnel to be confirmed live, persists the URL to the project
+ * row, and returns the final URL.
  *
- * Consolidates the separate startNgrok + fetchLiveNgrokUrl calls into a
- * single function so both the provision path and reconnect path share
- * identical behaviour and always write the URL to the DB.
+ * The --url flag pins the tunnel to a fixed domain so the URL never changes
+ * between sandbox restarts or agent session reconnects.
+ *
+ * Requires:
+ *  - NGROK_AUTHTOKEN set in the server environment
+ *  - The domain `{projectId}.ngrok.dev` registered on the ngrok account
  */
 async function startNgrokAndGetUrl(
 	sandbox: BaseSandbox,
 	projectId: string,
+	ngrokDomain: string,
 ): Promise<string | null> {
-	// Kill any existing ngrok process to avoid port conflicts on reconnect
+	const expectedUrl = `https://${ngrokDomain}`;
+
+	// Step 1: Configure auth token inside the sandbox
 	await sandbox.execute(
-		"pkill -f 'ngrok http' 2>/dev/null || true; " +
-		"ngrok http 8081 --log=stdout > /tmp/ngrok.log 2>&1 &",
+		`ngrok config add-authtoken ${env.NGROK_AUTHTOKEN} 2>/dev/null || true`,
 	);
 
-	// Give ngrok 3 seconds to bind before starting to poll.
-	// 3s is enough for cold-start; the poller handles any remaining startup time.
+	// Step 2: Kill any existing ngrok process to avoid port / domain conflicts
+	await sandbox.execute(
+		"pkill -9 ngrok 2>/dev/null || true",
+	);
+	await new Promise<void>((r) => setTimeout(r, 1_500));
+
+	// Step 3: Start ngrok with the fixed custom domain in the background
+	// --url pins the tunnel to {projectId}.ngrok.dev (stable across restarts)
+	// --log=stdout redirects ngrok logs to /tmp/ngrok.log for debugging
+	await sandbox.execute(
+		`ngrok http --url=${ngrokDomain} 8081 --log=stdout > /tmp/ngrok.log 2>&1 &`,
+	);
+
+	// Give ngrok 3 seconds to bind before polling
 	await new Promise<void>((r) => setTimeout(r, 3_000));
 
-	const url = await fetchLiveNgrokUrl(sandbox);
+	// Step 4: Poll the local ngrok API until the tunnel is confirmed live
+	const url = await fetchLiveNgrokUrl(sandbox, expectedUrl);
 
-	// Always persist the latest URL — even on reconnect this may have changed
+	// Step 5: Always persist the latest URL — even on reconnect
 	if (url) {
 		await updateProjectSandboxState(projectId, { ngrokUrl: url });
-		console.info(`[lifecycle] ngrok URL persisted to project ${projectId}: ${url}`);
+		console.info(`[lifecycle] ngrok custom domain live for project ${projectId}: ${url}`);
+	} else {
+		console.warn(
+			`[lifecycle] ngrok tunnel failed for project ${projectId}. ` +
+			`Ensure the domain '${ngrokDomain}' is registered on your ngrok account.`,
+		);
 	}
 
 	return url;
 }
 
 /**
- * Polls the ngrok local API inside the sandbox to get the actual random
- * preview URL assigned by the free plan (e.g. https://abc123.ngrok-free.app).
- * Retries every 2 seconds for up to 30 seconds while the tunnel is starting.
- * Returns null if ngrok is not running or the tunnel does not come up in time.
+ * Polls the ngrok local API inside the sandbox until the tunnel is live.
+ * Expects the tunnel public_url to match `expectedUrl` ({projectId}.ngrok.dev).
+ * Retries every 2 seconds for up to 30 seconds.
+ * Returns null if the tunnel does not come up in time.
  */
-async function fetchLiveNgrokUrl(sandbox: BaseSandbox): Promise<string | null> {
+async function fetchLiveNgrokUrl(
+	sandbox: BaseSandbox,
+	expectedUrl: string,
+): Promise<string | null> {
 	const MAX_ATTEMPTS = 15;
 	const INTERVAL_MS = 2_000;
 
@@ -389,11 +433,14 @@ async function fetchLiveNgrokUrl(sandbox: BaseSandbox): Promise<string | null> {
 				const data = JSON.parse(result.output) as {
 					tunnels?: Array<{ public_url: string; proto: string }>;
 				};
-				const httpsTunnel = data.tunnels?.find((t) => t.proto === "https");
+				const httpsTunnel = data.tunnels?.find(
+					(t) => t.proto === "https" && t.public_url === expectedUrl,
+				);
 				if (httpsTunnel?.public_url) {
-					console.info(`[lifecycle] ngrok tunnel ready: ${httpsTunnel.public_url}`);
+					console.info(`[lifecycle] ngrok tunnel confirmed: ${httpsTunnel.public_url}`);
 					return httpsTunnel.public_url;
 				}
+				// Tunnel list returned but our domain not yet bound — keep polling
 			} catch {
 				// JSON not ready yet — keep polling
 			}
@@ -402,6 +449,6 @@ async function fetchLiveNgrokUrl(sandbox: BaseSandbox): Promise<string | null> {
 		await new Promise<void>((r) => setTimeout(r, INTERVAL_MS));
 	}
 
-	console.warn("[lifecycle] ngrok tunnel did not start within 30s");
+	console.warn(`[lifecycle] ngrok tunnel for ${expectedUrl} did not start within 30s`);
 	return null;
 }
