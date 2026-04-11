@@ -44,14 +44,23 @@ export function getStore(): BaseStore {
 }
 
 /**
- * Build a deterministic LangGraph thread ID for a session.
- * Encodes enough context so the supervisor can resume an existing thread.
+ * Build a deterministic LangGraph thread ID for a project.
+ *
+ * The threadId is set equal to the projectId so that:
+ *  - All agent sessions for the same project share one conversation thread.
+ *  - The LangGraph checkpointer can resume from exactly where it left off
+ *    across page reloads, reconnects, and HITL pauses without needing a
+ *    separate session lookup.
+ *
+ * If you need per-session isolation (e.g. multiple parallel runs on the same
+ * project), append a sessionId: `${projectId}:${sessionId}`.
  */
 export function buildThreadId(params: {
   projectId: string;
   sessionId: string;
 }): string {
-  return `magic-vibing:${params.projectId}:${params.sessionId}`;
+  // threadId === projectId: one stable thread per project.
+  return params.projectId;
 }
 
 /**
