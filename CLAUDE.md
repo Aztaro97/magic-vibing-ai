@@ -23,7 +23,9 @@ packages/
   jobs/               # Background job processing (Inngest)
   ui/                 # Shared shadcn/ui + Tailwind CSS v4 components
   validators/         # Zod validation schemas (includes agent-states)
+  webhooks/           # Webhook handlers (sub-export: /e2b)
 tooling/              # Shared ESLint, Prettier, Tailwind, TypeScript configs
+sandbox-templates/    # E2B templates: nextjs, expo, react-native-expo, mobile-template
 ```
 
 ### Data Flow
@@ -39,9 +41,13 @@ tooling/              # Shared ESLint, Prettier, Tailwind, TypeScript configs
 ```bash
 # Development
 pnpm dev                              # All apps (turbo watch)
-pnpm dev:next                         # Next.js admin only
-pnpm -F @acme/deep-agents dev         # LangGraph dev server on port 2024
-pnpm -F @acme/mobile dev              # Mobile app
+pnpm dev:next                         # Filter: -F @acme/nextjs... (admin chain)
+pnpm -F @acme/admin next-dev          # Next.js admin directly (turbopack)
+pnpm -F @acme/admin langgraph-dev     # LangGraph dev server on port 2024
+pnpm -F @acme/mobile dev              # Mobile (APP_ENV=development)
+pnpm -F @acme/mobile dev:staging      # Mobile staging build
+pnpm -F @acme/mobile ios              # iOS native build (expo run:ios)
+pnpm -F @acme/mobile android          # Android native build
 
 # Database (Drizzle ORM)
 pnpm db:push                          # Push schema to PostgreSQL
@@ -54,6 +60,7 @@ pnpm lint:fix                         # Auto-fix lint issues
 pnpm format                           # Prettier check
 pnpm format:fix                       # Prettier write
 pnpm typecheck                        # TypeScript check all packages
+pnpm lint:ws                          # Workspace-level lint (sherif)
 
 # Build
 pnpm build                            # Build all packages/apps
@@ -66,9 +73,12 @@ pnpm -F @acme/mobile test -- --testNamePattern="Login"  # Single test
 # UI components
 pnpm ui-add                           # Add shadcn/ui component
 
-# E2B sandbox templates
-pnpm template:build:nextjs            # Build Next.js sandbox template
-pnpm template:build:expo              # Build Expo sandbox template
+# E2B sandbox templates (build → publish)
+pnpm template:build:nextjs            # Build magic-web-ai template
+pnpm template:build:expo              # Build expo-web-app template
+pnpm template:build:react-native-expo # Build react-native-expo-mobile template
+pnpm template:build:mobile            # Build mobile-template (copies skills-memory)
+pnpm sandbox:logs                     # Tail logs of pinned sandbox
 ```
 
 ## Deep Agents System (`packages/deep-agents/`)
@@ -129,6 +139,7 @@ Required (see `turbo.json` globalEnv):
 - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` - LLM providers
 - `LANGCHAIN_API_KEY` - LangSmith tracing
 - Pusher: `PUSHER_APP_ID`, `PUSHER_SECRET`, `NEXT_PUBLIC_PUSHER_KEY`, `NEXT_PUBLIC_PUSHER_CLUSTER`
+- `NGROK_AUTHTOKEN`, `E2B_WEBHOOK_SECRET`, `MODEL_PROVIDER`, `NEXT_PUBLIC_APP_URL`
 
 ## Requirements
 
