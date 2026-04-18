@@ -21,6 +21,7 @@ export const env = createEnv({
 			.default("https://api.smith.langchain.com"),
 		LANGCHAIN_API_KEY: z.string().optional(),
 		LANGCHAIN_PROJECT: z.string().optional().default("vibecoding"),
+		NGROK_AUTHTOKEN: z.string().optional(),
 
 		MODEL_PROVIDER: z.enum(["anthropic", "openai", "google", "moonshot", "ollama"]).optional().default("ollama"),
 	},
