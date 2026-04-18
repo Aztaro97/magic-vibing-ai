@@ -3,14 +3,16 @@ import { authRouter } from "./router/auth";
 import { llmRouter } from "./router/llms";
 import { messageRouter } from "./router/message";
 import { projectRouter } from "./router/projects";
+import { sandboxRouter } from "./router/sandbox";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
-  auth: authRouter,
-  messages: messageRouter,
-  projects: projectRouter,
-  llms: llmRouter,
-  agent: agentRouter,
+	auth: authRouter,
+	messages: messageRouter,
+	projects: projectRouter,
+	llms: llmRouter,
+	agent: agentRouter,
+	sandbox: sandboxRouter,
 });
 
 // export type definition of API

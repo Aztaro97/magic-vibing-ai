@@ -45,6 +45,10 @@
     "./utils": {
       "import": "./src/utils/subdomain.ts",
       "types": "./src/utils/subdomain.ts"
+    },
+    "./libs": {
+      "import": "./src/libs/index.ts",
+      "types": "./src/libs/index.ts"
     }
   },
   "scripts": {
