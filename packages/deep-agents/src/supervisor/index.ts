@@ -1,4 +1,4 @@
-import type { BaseSandbox } from "deepagents";
+import type { BaseSandbox, DeepAgent } from "deepagents";
 import { createDeepAgent, StoreBackend } from "deepagents";
 
 import { env } from "../../env";
@@ -119,3 +119,6 @@ export function createMagicVibingAgent(
 		checkpointer: getCheckpointer(),
 	});
 }
+
+
+export type { DeepAgent };
