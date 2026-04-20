@@ -1,0 +1,1 @@
+ALTER TABLE "project" ALTER COLUMN "sandbox_provider" SET DEFAULT 'e2b';

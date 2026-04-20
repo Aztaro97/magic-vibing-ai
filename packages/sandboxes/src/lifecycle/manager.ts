@@ -39,6 +39,7 @@ import { getExpoSubdomain } from "../utils/subdomain";
 import {
 	getProjectSandboxState,
 	updateProjectSandboxState,
+	withProjectSandboxLock,
 } from "./project-sync";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,105 +68,99 @@ export async function resolveProjectSandbox(
 	// Enforce per-org concurrency limit before any provisioning
 	if (orgId) await assertConcurrencyLimit(orgId);
 
-	// Load current project state
-	const projectState = await getProjectSandboxState(projectId);
-	const subdomain = getExpoSubdomain(projectState.name);
-	const timeoutMs = getTimeoutForUserTier(userTier);
+	// Serialize all sandbox resolution for this project so concurrent agent runs
+	// can't both create sandboxes and orphan each other's state.
+	return withProjectSandboxLock(projectId, async () => {
+		// Load current project state (inside the lock so we see committed writes)
+		const projectState = await getProjectSandboxState(projectId);
+		const subdomain = getExpoSubdomain(projectState.name);
+		const timeoutMs = getTimeoutForUserTier(userTier);
 
-	// Deterministic custom domain — stable across sessions for this project
-	const ngrokDomain = `${projectId}.ngrok.dev`;
+		// Deterministic custom domain — stable across sessions for this project
+		const ngrokDomain = `${projectId}.ngrok.dev`;
 
-	// ── 1. Try reconnecting to an existing active sandbox ─────────────────────
-	if (projectState.sandboxId && projectState.sandboxStatus === "active") {
-		const reconnected = await tryReconnect(
-			projectState.sandboxId,
-			projectId,
-			ngrokDomain,
-			subdomain,
-			timeoutMs,
-		);
+		// ── 1. Try reconnecting to an existing active or paused sandbox ──────────
+		if (
+			projectState.sandboxId &&
+			(projectState.sandboxStatus === "active" ||
+				projectState.sandboxStatus === "paused")
+		) {
+			const reconnected = await tryReconnect(
+				projectState.sandboxId,
+				projectState.sandboxProvider,
+				projectId,
+				ngrokDomain,
+				subdomain,
+				timeoutMs,
+			);
 
-		if (reconnected) {
-			if (orgId) incrementActiveCount(orgId);
-			return { ...reconnected, acquiredAt };
+			if (reconnected) {
+				if (orgId) incrementActiveCount(orgId);
+				return { ...reconnected, acquiredAt };
+			}
+
+			// Reconnect failed — stale state already cleared inside tryReconnect
 		}
 
-		// Reconnect failed — stale state already cleared inside tryReconnect
-	}
+		// ── 2. Create a new sandbox via the router ───────────────────────────────
+		const providerOverride = options.provider ?? hints.provider;
 
-	// ── 2. Try reconnecting to a paused sandbox ──────────────────────────────
-	if (projectState.sandboxId && projectState.sandboxStatus === "paused") {
-		const resumed = await tryReconnect(
-			projectState.sandboxId,
-			projectId,
-			ngrokDomain,
+		const hasE2B = Boolean(env.E2B_API_KEY);
+		const anticipatedProvider: SandboxProvider = providerOverride
+			?? (hasE2B ? "e2b" : "daytona");
+
+		const sandboxEnvVars = buildSandboxEnvVars({
 			subdomain,
-			timeoutMs,
+			projectId,
+			provider: anticipatedProvider,
+			extraEnv: hints.envVars,
+			ngrokAuthToken: env.NGROK_AUTHTOKEN ?? undefined,
+		});
+
+		const resolved = await resolveSandbox({
+			projectId,
+			sessionId,
+			orgId,
+			hints: {
+				...hints,
+				envVars: sandboxEnvVars,
+				provider: providerOverride,
+			},
+		});
+
+		if (!resolved) return null;
+
+		// ── 3. Start ngrok with custom domain and verify the live URL ────────────
+		// We use --url={projectId}.ngrok.dev so the domain is stable and
+		// deterministic — the same URL survives sandbox restarts and reconnects.
+		let ngrokUrl: string | null = null;
+
+		if (resolved.provider === "e2b" && env.NGROK_AUTHTOKEN) {
+			ngrokUrl = await startNgrokAndGetUrl(resolved.instance, projectId, ngrokDomain);
+		}
+
+		// ── 4. Persist sandbox state to project ──────────────────────────────────
+		await updateProjectSandboxState(projectId, {
+			sandboxId: resolved.id,
+			sandboxProvider: resolved.provider,
+			sandboxStatus: "active",
+			subdomain,
+			ngrokUrl,
+		});
+
+		console.info(
+			`[lifecycle] ${sessionId}: Sandbox provisioned ` +
+			`(provider=${resolved.provider}, id=${resolved.id}, subdomain=${subdomain}, ` +
+			`ngrokUrl=${ngrokUrl ?? "none"})`,
 		);
 
-		if (resumed) {
-			if (orgId) incrementActiveCount(orgId);
-			return { ...resumed, acquiredAt };
-		}
-	}
-
-	// ── 3. Create a new sandbox via the router ───────────────────────────────
-	const providerOverride = options.provider ?? hints.provider;
-
-	const hasE2B = Boolean(env.E2B_API_KEY);
-	const anticipatedProvider: SandboxProvider = providerOverride
-		?? (hasE2B ? "e2b" : "daytona");
-
-	const sandboxEnvVars = buildSandboxEnvVars({
-		subdomain,
-		projectId,
-		provider: anticipatedProvider,
-		extraEnv: hints.envVars,
-		ngrokAuthToken: env.NGROK_AUTHTOKEN ?? undefined,
+		return {
+			...resolved,
+			subdomain,
+			ngrokUrl: ngrokUrl ?? undefined,
+			acquiredAt,
+		};
 	});
-
-	const resolved = await resolveSandbox({
-		projectId,
-		sessionId,
-		orgId,
-		hints: {
-			...hints,
-			envVars: sandboxEnvVars,
-			provider: providerOverride,
-		},
-	});
-
-	if (!resolved) return null;
-
-	// ── 4. Start ngrok with custom domain and verify the live URL ────────────
-	// We use --url={projectId}.ngrok.dev so the domain is stable and
-	// deterministic — the same URL survives sandbox restarts and reconnects.
-	let ngrokUrl: string | null = null;
-
-	if (resolved.provider === "e2b" && env.NGROK_AUTHTOKEN) {
-		ngrokUrl = await startNgrokAndGetUrl(resolved.instance, projectId, ngrokDomain);
-	}
-
-	// ── 5. Persist sandbox state to project ──────────────────────────────────
-	await updateProjectSandboxState(projectId, {
-		sandboxId: resolved.id,
-		sandboxStatus: "active",
-		subdomain,
-		ngrokUrl,
-	});
-
-	console.info(
-		`[lifecycle] ${sessionId}: Sandbox provisioned ` +
-		`(provider=${resolved.provider}, id=${resolved.id}, subdomain=${subdomain}, ` +
-		`ngrokUrl=${ngrokUrl ?? "none"})`,
-	);
-
-	return {
-		...resolved,
-		subdomain,
-		ngrokUrl: ngrokUrl ?? undefined,
-		acquiredAt,
-	};
 }
 
 /**
@@ -217,6 +212,7 @@ export async function destroyProjectSandbox(
 
 	await updateProjectSandboxState(projectId, {
 		sandboxId: null,
+		sandboxProvider: null,
 		sandboxStatus: "destroyed",
 		ngrokUrl: null,
 	});
@@ -240,13 +236,17 @@ export function releaseSandbox(orgId?: string): void {
 
 /**
  * Attempts to reconnect to an existing sandbox by ID.
- * Returns `LifecycleResult` on success, `null` on failure.
- * On "not found" errors, clears the stale sandbox state from the project.
- * On successful E2B reconnect, restarts the ngrok tunnel with the same
- * custom domain so the URL remains stable.
+ *
+ * Uses `knownProvider` (persisted on `project.sandboxProvider`) to go direct
+ * to the correct backend. Falls back to probing both when the provider is
+ * unknown (legacy rows written before the column existed).
+ *
+ * Returns `LifecycleResult` on success, `null` on failure. On "not found"
+ * errors, clears the stale sandbox state from the project.
  */
 async function tryReconnect(
 	sandboxId: string,
+	knownProvider: SandboxProvider | null,
 	projectId: string,
 	ngrokDomain: string,
 	subdomain: string,
@@ -255,101 +255,158 @@ async function tryReconnect(
 	const hasE2B = Boolean(env.E2B_API_KEY);
 	const hasDaytona = Boolean(env.DAYTONA_API_KEY);
 
-	// ── Try E2B reconnect ────────────────────────────────────────────────────
-	if (hasE2B) {
-		try {
-			const backend = await E2BSandboxBackend.connect(sandboxId, { timeoutMs });
+	// Determine attempt order based on what we know about the sandbox.
+	// Legacy rows without a stored provider probe both.
+	const attempts: SandboxProvider[] = knownProvider
+		? [knownProvider]
+		: ["e2b", "daytona"];
 
-			// Restart (or re-verify) the tunnel using the same custom domain.
-			// Even on reconnect the domain never changes — no URL churn.
-			let ngrokUrl: string | null = null;
-			if (env.NGROK_AUTHTOKEN) {
-				ngrokUrl = await startNgrokAndGetUrl(
-					backend as unknown as BaseSandbox,
-					projectId,
-					ngrokDomain,
-				);
-			}
-
-			await updateProjectSandboxState(projectId, {
-				sandboxStatus: "active",
+	for (const provider of attempts) {
+		if (provider === "e2b" && hasE2B) {
+			const result = await tryReconnectE2B(
+				sandboxId,
+				projectId,
+				ngrokDomain,
 				subdomain,
-				ngrokUrl,
-			});
+				timeoutMs,
+			);
+			if (result.status === "ok") return result.value;
+			if (result.status === "not_found") return null;
+			// "other_error": only fall through to Daytona when provider was unknown
+		}
 
-			return {
+		if (provider === "daytona" && hasDaytona) {
+			const result = await tryReconnectDaytona(
+				sandboxId,
+				projectId,
+				subdomain,
+			);
+			if (result.status === "ok") return result.value;
+			if (result.status === "not_found") return null;
+		}
+	}
+
+	// All known attempts exhausted — clear the stale state.
+	await updateProjectSandboxState(projectId, {
+		sandboxId: null,
+		sandboxProvider: null,
+		sandboxStatus: null,
+		ngrokUrl: null,
+	});
+	return null;
+}
+
+type ReconnectOutcome =
+	| { status: "ok"; value: Omit<LifecycleResult, "acquiredAt"> }
+	| { status: "not_found" }
+	| { status: "other_error"; error: unknown };
+
+async function tryReconnectE2B(
+	sandboxId: string,
+	projectId: string,
+	ngrokDomain: string,
+	subdomain: string,
+	timeoutMs: number,
+): Promise<ReconnectOutcome> {
+	try {
+		const backend = await E2BSandboxBackend.connect(sandboxId, { timeoutMs });
+
+		// Restart (or re-verify) the tunnel using the same custom domain.
+		// Even on reconnect the domain never changes — no URL churn.
+		let ngrokUrl: string | null = null;
+		if (env.NGROK_AUTHTOKEN) {
+			ngrokUrl = await startNgrokAndGetUrl(
+				backend as unknown as BaseSandbox,
+				projectId,
+				ngrokDomain,
+			);
+		}
+
+		await updateProjectSandboxState(projectId, {
+			sandboxProvider: "e2b",
+			sandboxStatus: "active",
+			subdomain,
+			ngrokUrl,
+		});
+
+		return {
+			status: "ok",
+			value: {
 				instance: backend as unknown as BaseSandbox,
 				provider: "e2b",
 				id: backend.id,
 				shouldClose: false,
-				complexity: { tier: "moderate", score: 30, reasons: ["reconnected existing E2B sandbox"] },
+				complexity: {
+					tier: "moderate",
+					score: 30,
+					reasons: ["reconnected existing E2B sandbox"],
+				},
 				subdomain,
 				ngrokUrl: ngrokUrl ?? undefined,
-			};
-		} catch (err) {
-			if (isSandboxNotFoundError(err)) {
-				console.info(`[lifecycle] E2B sandbox ${sandboxId} not found, clearing stale state`);
-				await updateProjectSandboxState(projectId, {
-					sandboxId: null,
-					sandboxStatus: null,
-					ngrokUrl: null,
-				});
-				return null;
-			}
-
-			if (hasDaytona) {
-				// Fall through to Daytona
-			} else {
-				console.warn(`[lifecycle] E2B reconnect failed for ${sandboxId}:`, err);
-				await updateProjectSandboxState(projectId, {
-					sandboxId: null,
-					sandboxStatus: null,
-					ngrokUrl: null,
-				});
-				return null;
-			}
-		}
-	}
-
-	// ── Try Daytona reconnect ────────────────────────────────────────────────
-	if (hasDaytona) {
-		try {
-			const backend = await DaytonaSandboxBackend.reconnect(sandboxId);
-
-			// Daytona has its own URL mechanism — no ngrok needed
+			},
+		};
+	} catch (err) {
+		if (isSandboxNotFoundError(err)) {
+			console.info(`[lifecycle] E2B sandbox ${sandboxId} not found, clearing stale state`);
 			await updateProjectSandboxState(projectId, {
-				sandboxStatus: "active",
-				subdomain,
+				sandboxId: null,
+				sandboxProvider: null,
+				sandboxStatus: null,
 				ngrokUrl: null,
 			});
+			return { status: "not_found" };
+		}
+		console.warn(`[lifecycle] E2B reconnect failed for ${sandboxId}:`, err);
+		return { status: "other_error", error: err };
+	}
+}
 
-			return {
+async function tryReconnectDaytona(
+	sandboxId: string,
+	projectId: string,
+	subdomain: string,
+): Promise<ReconnectOutcome> {
+	try {
+		const backend = await DaytonaSandboxBackend.reconnect(sandboxId);
+
+		// Daytona has its own URL mechanism — no ngrok needed
+		await updateProjectSandboxState(projectId, {
+			sandboxProvider: "daytona",
+			sandboxStatus: "active",
+			subdomain,
+			ngrokUrl: null,
+		});
+
+		return {
+			status: "ok",
+			value: {
 				instance: backend.instance as unknown as BaseSandbox,
 				provider: "daytona",
 				id: backend.id,
 				shouldClose: false,
-				complexity: { tier: "complex", score: 50, reasons: ["reconnected existing Daytona sandbox"] },
+				complexity: {
+					tier: "complex",
+					score: 50,
+					reasons: ["reconnected existing Daytona sandbox"],
+				},
 				subdomain,
 				ngrokUrl: undefined,
-			};
-		} catch (err) {
-			if (isSandboxNotFoundError(err)) {
-				console.info(`[lifecycle] Daytona sandbox ${sandboxId} not found, clearing stale state`);
-			} else {
-				console.warn(`[lifecycle] Daytona reconnect failed for ${sandboxId}:`, err);
-			}
-
+			},
+		};
+	} catch (err) {
+		if (isSandboxNotFoundError(err)) {
+			console.info(`[lifecycle] Daytona sandbox ${sandboxId} not found, clearing stale state`);
 			await updateProjectSandboxState(projectId, {
 				sandboxId: null,
+				sandboxProvider: null,
 				sandboxStatus: null,
 				ngrokUrl: null,
 			});
-			return null;
+			return { status: "not_found" };
 		}
+		console.warn(`[lifecycle] Daytona reconnect failed for ${sandboxId}:`, err);
+		return { status: "other_error", error: err };
 	}
-
-	// No providers available
-	return null;
 }
 
 /**

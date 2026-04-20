@@ -7,7 +7,8 @@ export const project = pgTable("project", {
 	name: text("name").notNull(),
 	userId: text("user_id").notNull(),
 	sandboxId: text("sandbox_id"),
-	sandboxStatus: text('sandbox_status'), // 'active', 'paused', 'destroyed' - E2B sandbox status
+	sandboxStatus: text("sandbox_status"), // 'active' | 'paused' | 'destroyed'
+	sandboxProvider: text("sandbox_provider").default("e2b"), // 'e2b' | 'daytona' — known provider for reconnects
 	subdomain: text("subdomain"),
 	ngrokUrl: text("ngrok_url"),
 	model: text("model").notNull().default("claude-opus-4-0"),

@@ -16,14 +16,14 @@
       "types": "./dist/schema.d.ts",
       "default": "./src/schema.ts"
     },
-	"./agents": {
-		"types": "./dist/agents.d.ts",
-		"default": "./src/agents.ts"
-	},
-	"./sandbox-event": {
-		"types": "./dist/sandbox-event.d.ts",
-		"default": "./src/sandbox-event.ts"
-	}
+    "./agents": {
+      "types": "./dist/agents.d.ts",
+      "default": "./src/agents.ts"
+    },
+    "./sandbox-event": {
+      "types": "./dist/sandbox-event.d.ts",
+      "default": "./src/sandbox-event.ts"
+    }
   },
   "license": "MIT",
   "scripts": {

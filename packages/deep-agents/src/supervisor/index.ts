@@ -45,20 +45,53 @@ function isDangerousCommand(input: unknown): boolean {
 // Model
 // ─────────────────────────────────────────
 
+/** Default model names per provider — overridden by env.AGENT_MODEL when set. */
+const PROVIDER_DEFAULT_MODELS: Record<string, string> = {
+	google: "gemini-3.1-pro-preview",
+	anthropic: "claude-sonnet-4-6",
+	moonshot: "kimi-k2.5",
+	openai: "gpt-5.4",
+	ollama: "Kimi-K2.5",
+};
+
+function assertApiKey(key: string | undefined, provider: string): string {
+	if (!key) {
+		throw new Error(
+			`${provider.toUpperCase()} API key is required when MODEL_PROVIDER="${provider}". ` +
+			`Set the corresponding env var in your .env file.`,
+		);
+	}
+	return key;
+}
+
 function buildModel() {
-	switch (env.MODEL_PROVIDER) {
+	const provider = env.MODEL_PROVIDER;
+	// Use AGENT_MODEL env var if it differs from the default "qwen3.5" fallback,
+	// otherwise use the provider-specific default.
+	const isCustomModel = env.AGENT_MODEL && env.AGENT_MODEL !== "qwen3.5";
+	const modelName = isCustomModel ? env.AGENT_MODEL : PROVIDER_DEFAULT_MODELS[provider];
+
+	if (!modelName) {
+		throw new Error(`No default model configured for MODEL_PROVIDER="${provider}"`);
+	}
+
+	switch (provider) {
 		case "google":
-			return googleGeminiModel({ modelName: "gemini-3.1-pro-preview" });
+			assertApiKey(env.GEMINI_API_KEY, "google");
+			return googleGeminiModel({ modelName: modelName as Parameters<typeof googleGeminiModel>[0]["modelName"] });
 		case "anthropic":
-			return anthropicModel({ modelName: "claude-sonnet-4-6" });
+			assertApiKey(env.ANTHROPIC_API_KEY, "anthropic");
+			return anthropicModel({ modelName: modelName as Parameters<typeof anthropicModel>[0]["modelName"] });
 		case "moonshot":
-			return moonshotModel({ modelName: "kimi-k2.5" });
+			assertApiKey(env.MOONSHOT_API_KEY, "moonshot");
+			return moonshotModel({ modelName: modelName as Parameters<typeof moonshotModel>[0]["modelName"] });
 		case "openai":
-			return openaiModel({ modelName: "gpt-5.4" });
+			assertApiKey(env.OPENAI_API_KEY, "openai");
+			return openaiModel({ modelName: modelName as Parameters<typeof openaiModel>[0]["modelName"] });
 		case "ollama":
-			return ollamaModel({ modelName: "Kimi-K2.5" });
+			return ollamaModel({ modelName: modelName as Parameters<typeof ollamaModel>[0]["modelName"] });
 		default:
-			throw new Error("Invalid MODEL_PROVIDER");
+			throw new Error(`Invalid MODEL_PROVIDER: "${provider}"`);
 	}
 }
 
@@ -72,19 +105,20 @@ export interface SupervisorOptions {
 
 export function createMagicVibingAgent(
 	options: SupervisorOptions = {},
-): DeepAgent {
+) {
 	const { sandbox } = options;
 
 	return createDeepAgent({
 		model: buildModel(),
 		systemPrompt: SUPERVISOR_PROMPT,
 		subagents: ALL_SUBAGENTS,
-		skills: ["/.deepagents/skills"],
-		memory: ["/.deepagents/AGENTS.md"],
+		skills: ["/home/user/app/.deepagents/skills"],
+		memory: ["/home/user/app/.deepagents/AGENTS.md"],
 		backend: sandbox ?? ((config) => new StoreBackend(config)),
 		store: getStore(),
 		checkpointer: getCheckpointer(),
-	}) as any as DeepAgent;
+	});
 }
+
 
 export type { DeepAgent };
