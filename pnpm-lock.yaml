@@ -776,12 +776,18 @@ importers:
       '@types/prismjs':
         specifier: ^1.26.6
         version: 1.26.6
+      '@types/react':
+        specifier: catalog:react19
+        version: 19.0.14
       eslint:
         specifier: 'catalog:'
         version: 9.27.0(jiti@2.6.1)
       prettier:
         specifier: 'catalog:'
         version: 3.5.3
+      react:
+        specifier: catalog:react19
+        version: 19.0.0
       typescript:
         specifier: 'catalog:'
         version: 5.8.3

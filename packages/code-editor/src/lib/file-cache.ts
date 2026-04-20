@@ -36,7 +36,8 @@ class FileCache {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.version);
 
-      request.onerror = () => reject(toError(request.error, "IndexedDB open failed"));
+      request.onerror = () =>
+        reject(toError(request.error, "IndexedDB open failed"));
       request.onsuccess = () => {
         this.db = request.result;
         resolve();
@@ -372,8 +373,8 @@ class FileCache {
 
         // Group by project
         files.reduce<Record<string, string[]>>((acc, file) => {
-          acc[file.projectId] ??= [];
-          acc[file.projectId].push(file.filePath);
+          const group = (acc[file.projectId] ??= []);
+          group.push(file.filePath);
           return acc;
         }, {});
 
