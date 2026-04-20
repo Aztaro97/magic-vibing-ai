@@ -1,11 +1,16 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { CopyIcon, Loader2Icon, SmartphoneIcon } from "lucide-react";
 import { useQRCode } from "next-qrcode";
 
-import { CodePanel, type FileItem } from "@acme/code-editor/components";
+import type { FileItem } from "@acme/code-editor/components";
+import { CodePanel } from "@acme/code-editor/components";
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 
@@ -16,7 +21,13 @@ interface PreviewPanelProps {
   mode: "preview" | "code";
 }
 
-function Placeholder({ title, description }: { title: string; description: string }) {
+function Placeholder({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <div className="flex h-full items-center justify-center">
       <div className="text-center">
@@ -135,7 +146,12 @@ export function PreviewPanel({ projectId, mode }: PreviewPanelProps) {
             <code className="bg-muted max-w-[260px] truncate rounded px-2 py-1 font-mono text-xs">
               {previewUrl}
             </code>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyUrl}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={handleCopyUrl}
+            >
               <CopyIcon className="h-3 w-3" />
             </Button>
           </div>
