@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { CodeIcon, EyeIcon, Loader2Icon } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
 
@@ -13,6 +14,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@acme/ui/tabs";
 
 import AgentPanel from "~/components/agent-panel";
+import { useTRPC } from "~/trpc/react";
 import { ErrorNotificationContainer } from "../error-notification-container";
 import { PreviewPanel } from "./preview-panel";
 import ProjectHeader from "./project-header";
@@ -46,6 +48,41 @@ function ErrorFallback({ error, label }: { error?: Error; label: string }) {
         </p>
       </div>
     </div>
+  );
+}
+
+interface AgentPanelSectionProps {
+  projectId: string;
+  activeFragment: Fragment | null;
+  setActiveFragment: (f: Fragment | null) => void;
+}
+
+function AgentPanelSection({
+  projectId,
+  activeFragment,
+  setActiveFragment,
+}: AgentPanelSectionProps) {
+  const trpc = useTRPC();
+  const { data: messages } = useSuspenseQuery(
+    trpc.messages.getMany.queryOptions({ projectId }),
+  );
+
+  // Bootstrap the LangGraph run from the USER prompt saved by projects.create.
+  // Only set when the thread hasn't started yet (single USER row, no assistant
+  // replies) — otherwise refreshing mid-run would resend the prompt.
+  const firstPrompt =
+    messages.length === 1 && messages[0]?.role === "USER"
+      ? messages[0].content
+      : undefined;
+
+  return (
+    <AgentPanel
+      projectId={projectId}
+      sessionId={projectId}
+      activeFragment={activeFragment}
+      setActiveFragment={setActiveFragment}
+      initialPrompt={firstPrompt}
+    />
   );
 }
 
@@ -91,9 +128,8 @@ function ProjectView({ projectId }: Props) {
                   - Stable across page reloads (no random UUIDs)
                   - thread_id inside useStream will be this value
               */}
-              <AgentPanel
+              <AgentPanelSection
                 projectId={projectId}
-                sessionId={projectId}
                 activeFragment={activeFragment}
                 setActiveFragment={setActiveFragment}
               />
@@ -120,13 +156,18 @@ function ProjectView({ projectId }: Props) {
               </TabsList>
             </div>
 
-            <TabsContent value="preview" className="mt-0 flex-1 overflow-hidden">
+            <TabsContent
+              value="preview"
+              className="mt-0 flex-1 overflow-hidden"
+            >
               <ErrorBoundary
                 fallbackRender={({ error }) => (
                   <ErrorFallback error={error} label="preview" />
                 )}
               >
-                <Suspense fallback={<LoadingSkeleton label="Loading preview…" />}>
+                <Suspense
+                  fallback={<LoadingSkeleton label="Loading preview…" />}
+                >
                   <PreviewPanel projectId={projectId} mode="preview" />
                 </Suspense>
               </ErrorBoundary>
