@@ -111,15 +111,37 @@ export class E2BSandboxBackend extends BaseSandbox {
 	// ── BaseSandbox required method ──────────────────────────────────────────
 
 	async execute(command: string): Promise<ExecuteResponse> {
+		const prefix = `[e2b:${this._id}]`;
+		console.log(`${prefix} exec  ▶ ${command}`);
+
 		const result = await this._sandbox.commands.run(command, {
 			timeoutMs: parseInt(env.SANDBOX_TIMEOUT_SECONDS ?? "300") * 1_000,
 		});
 
-		return {
-			output: result.stdout + (result.stderr ? `\nSTDERR:\n${result.stderr}` : ""),
-			exitCode: result.exitCode,
-			truncated: false,
-		};
+		const output = result.stdout + (result.stderr ? `\nSTDERR:\n${result.stderr}` : "");
+		const preview = output.length > 500 ? `${output.slice(0, 500)}…` : output;
+
+		if (result.exitCode === 0) {
+			console.log(`${prefix} exit  ✔ (0)${preview ? `\n${preview}` : " (no output)"}`);
+		} else {
+			console.error(`${prefix} exit  ✖ (${result.exitCode})${preview ? `\n${preview}` : ""}`);
+		}
+
+		return { output, exitCode: result.exitCode, truncated: false };
+	}
+
+	/**
+	 * Starts a long-running daemon command without waiting for it to exit.
+	 * Uses the E2B SDK's `background: true` option so `wait()` is never called
+	 * and `CommandExitError` is never thrown — even if the process exits later.
+	 *
+	 * Use this for persistent services (ngrok, dev servers) that must outlive
+	 * the current command invocation.
+	 */
+	async startBackground(command: string): Promise<void> {
+		console.log(`[e2b:${this._id}] bg    ▶ ${command}`);
+		await this._sandbox.commands.run(command, { background: true });
+		console.log(`[e2b:${this._id}] bg    ✔ daemon started`);
 	}
 
 	// ── File operations — delegated to BaseSandbox via execute() ────────────

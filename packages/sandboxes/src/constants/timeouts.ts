@@ -4,12 +4,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const CONTAINER_TIMEOUTS = {
-	/** Free tier: 10 minutes */
-	FREE: 10 * 60_000,
-	/** Paid tier: 20 minutes */
-	PAID: 20 * 60_000,
-	/** Pause timeout: 5 minutes */
-	PAUSE: 5 * 60_000,
+	/** Free tier: 1 hour — keeps preview URL alive after agent run */
+	FREE: 60 * 60_000,
+	/** Paid tier: 2 hours */
+	PAID: 120 * 60_000,
+	/** Pause keepAlive: 1 hour grace period so preview stays up */
+	PAUSE: 60 * 60_000,
 	/** Default API operation timeout: 5 minutes */
 	API_DEFAULT: 5 * 60_000,
 } as const;
