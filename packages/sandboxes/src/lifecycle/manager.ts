@@ -15,7 +15,7 @@
 //   2. NGROK_AUTHTOKEN set in the server environment.
 //
 // The tunnel is started with:
-//   ngrok http --url={projectId}.ngrok.dev 8081
+//   ngrok http --domain={projectId}.ngrok.dev 8081
 //
 // On reconnect the same domain is reused — no URL churn between sessions.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -429,38 +429,57 @@ async function startNgrokAndGetUrl(
 ): Promise<string | null> {
 	const expectedUrl = `https://${ngrokDomain}`;
 
-	// Step 1: Configure auth token inside the sandbox
+	// Step 1: Start the Expo web dev server on port 8081 if not already running.
+	// Nothing listens on 8081 after a fresh sandbox boot — ngrok needs a backend.
+	const portCheck = await sandbox.execute(
+		"lsof -i :8081 -t 2>/dev/null | wc -l",
+	);
+	const isPortBusy = portCheck.output.trim() !== "0";
+	if (!isPortBusy) {
+		console.info("[lifecycle] Starting Expo web server on port 8081...");
+		await sandbox.execute(
+			"cd /home/user/app && " +
+			"EXPO_NO_INTERACTIVE=1 EXPO_WEB_PORT=8081 PORT=8081 " +
+			"nohup bun run web > /tmp/expo.log 2>&1 &",
+		);
+		// Give Metro bundler time to compile before starting the tunnel
+		await new Promise<void>((r) => setTimeout(r, 15_000));
+	}
+
+	// Step 2: Configure auth token inside the sandbox
 	await sandbox.execute(
 		`ngrok config add-authtoken ${env.NGROK_AUTHTOKEN} 2>/dev/null || true`,
 	);
 
-	// Step 2: Kill any existing ngrok process to avoid port / domain conflicts
+	// Step 3: Kill any existing ngrok process to avoid port / domain conflicts
 	await sandbox.execute(
 		"pkill -9 ngrok 2>/dev/null || true",
 	);
 	await new Promise<void>((r) => setTimeout(r, 1_500));
 
-	// Step 3: Start ngrok with the fixed custom domain in the background
-	// --url pins the tunnel to {projectId}.ngrok.dev (stable across restarts)
-	// --log=stdout redirects ngrok logs to /tmp/ngrok.log for debugging
+	// Step 4: Start ngrok with the fixed custom domain in the background.
+	// --domain is the correct ngrok v3 flag for reserved custom domains.
+	// --url (used previously) is for reserved addresses and does not work here.
 	await sandbox.execute(
-		`ngrok http --url=${ngrokDomain} 8081 --log=stdout > /tmp/ngrok.log 2>&1 &`,
+		`ngrok http --domain=${ngrokDomain} 8081 --log=stdout > /tmp/ngrok.log 2>&1 &`,
 	);
 
 	// Give ngrok 3 seconds to bind before polling
 	await new Promise<void>((r) => setTimeout(r, 3_000));
 
-	// Step 4: Poll the local ngrok API until the tunnel is confirmed live
+	// Step 5: Poll the local ngrok API until the tunnel is confirmed live
 	const url = await fetchLiveNgrokUrl(sandbox, expectedUrl);
 
-	// Step 5: Always persist the latest URL — even on reconnect
+	// Step 6: Always persist the latest URL — even on reconnect
 	if (url) {
 		await updateProjectSandboxState(projectId, { ngrokUrl: url });
 		console.info(`[lifecycle] ngrok custom domain live for project ${projectId}: ${url}`);
 	} else {
+		const ngrokLog = await sandbox.execute("tail -20 /tmp/ngrok.log 2>/dev/null || echo 'no log'");
 		console.warn(
 			`[lifecycle] ngrok tunnel failed for project ${projectId}. ` +
-			`Ensure the domain '${ngrokDomain}' is registered on your ngrok account.`,
+			`Ensure the domain '${ngrokDomain}' is reserved on your ngrok account.\n` +
+			`ngrok log: ${ngrokLog.output}`,
 		);
 	}
 

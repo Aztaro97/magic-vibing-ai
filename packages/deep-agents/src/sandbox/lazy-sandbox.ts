@@ -148,6 +148,19 @@ export class LazySandbox extends BaseSandbox {
 	private static async _startNgrokAndGetUrl(
 		sandbox: SandboxInstance,
 	): Promise<string | null> {
+		// Ensure Expo web dev server is running on port 8081 before opening the tunnel.
+		const portCheck = await sandbox.execute("lsof -i :8081 -t 2>/dev/null | wc -l");
+		const isPortBusy = portCheck.output.trim() !== "0";
+		if (!isPortBusy) {
+			await sandbox.execute(
+				"cd /home/user/app && " +
+				"EXPO_NO_INTERACTIVE=1 EXPO_WEB_PORT=8081 PORT=8081 " +
+				"nohup bun run web > /tmp/expo.log 2>&1 &",
+			);
+			// Give Metro time to compile before opening the tunnel
+			await new Promise<void>((r) => setTimeout(r, 15_000));
+		}
+
 		// Kill any stale ngrok process and start a fresh tunnel on port 8081.
 		// --log=stdout keeps it in foreground but we background via `&`.
 		await sandbox.execute(
