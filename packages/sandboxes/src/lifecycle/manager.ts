@@ -457,9 +457,36 @@ async function startNgrokAndGetUrl(
 	}
 	await new Promise<void>((r) => setTimeout(r, 1_500));
 
-	// Step 3: Start ngrok with the fixed custom domain.
+	// Step 3: ensure Expo web is serving on port 8081 before opening the tunnel.
+	// start_cmd (e2b.toml) launches it at boot, but may not be ready yet.
+	console.log(`${tag} step 3/4 checking Expo on port 8081…`);
+	try {
+		const probe = await sandbox.execute(
+			"curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/ 2>/dev/null || echo 0",
+		);
+		const httpCode = parseInt(probe.output?.trim() ?? "0", 10);
+		if (!httpCode) {
+			console.log(`${tag} Expo not running — starting bun run web…`);
+			const expoCmd =
+				"cd /home/user/app && EXPO_NO_INTERACTIVE=1 EXPO_WEB_PORT=8081 PORT=8081" +
+				" nohup bun run web >> /tmp/expo.log 2>&1";
+			const bgSandboxExpo = sandbox as unknown as { startBackground?: (cmd: string) => Promise<void> };
+			if (typeof bgSandboxExpo.startBackground === "function") {
+				await bgSandboxExpo.startBackground(expoCmd);
+			} else {
+				await sandbox.execute(`${expoCmd} &`);
+			}
+			console.log(`${tag} Expo start issued ✔`);
+		} else {
+			console.log(`${tag} Expo already up (HTTP ${httpCode}) ✔`);
+		}
+	} catch (err) {
+		console.warn(`${tag} Expo check/start failed (non-fatal):`, err);
+	}
+
+	// Step 4: Start ngrok with the fixed custom domain.
 	const ngrokCmd = `ngrok http --domain=${ngrokDomain} 8081 --log=stdout > /tmp/ngrok.log 2>&1`;
-	console.log(`${tag} step 3/4 launching ngrok daemon…`);
+	console.log(`${tag} step 4/4 launching ngrok daemon…`);
 	const bgSandbox = sandbox as unknown as { startBackground?: (cmd: string) => Promise<void> };
 	if (typeof bgSandbox.startBackground === "function") {
 		await bgSandbox.startBackground(ngrokCmd);
@@ -470,8 +497,8 @@ async function startNgrokAndGetUrl(
 	// Give ngrok 3 seconds to bind before polling
 	await new Promise<void>((r) => setTimeout(r, 3_000));
 
-	// Step 4: Poll the local ngrok API until the tunnel is confirmed live
-	console.log(`${tag} step 4/4 polling for tunnel on ${expectedUrl}…`);
+	// Step 5: Poll the local ngrok API until the tunnel is confirmed live
+	console.log(`${tag} step 5/5 polling for tunnel on ${expectedUrl}…`);
 	const url = await fetchLiveNgrokUrl(sandbox, expectedUrl, tag);
 
 	// Persist and report

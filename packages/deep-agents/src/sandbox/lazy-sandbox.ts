@@ -139,13 +139,19 @@ export class LazySandbox extends BaseSandbox {
 	}
 
 	/**
-	 * Configures ngrok authtoken inside the sandbox, starts ngrok on port 8081,
-	 * then polls the local ngrok API until the public URL is available.
+	 * Ensures Expo web is running on port 8081, configures ngrok authtoken,
+	 * starts the ngrok daemon, and polls until the public tunnel URL is available.
 	 *
-	 * All sandbox.execute() calls are wrapped in try/catch so that transient
-	 * E2B errors (e.g. "signal: terminated" on fresh sandbox init) never cause
-	 * the whole setup to fail. startBackground() is used for the ngrok daemon so
-	 * CommandExitError is never thrown regardless of ngrok's exit behaviour.
+	 * Step 1 — authtoken: required for any ngrok tunnel (including random URLs).
+	 * Step 2 — Expo: starts `bun run web` in the background if nothing is
+	 *           listening on port 8081. Safe to call even if start_cmd already
+	 *           launched Expo — the check is a quick curl probe.
+	 * Step 3 — ngrok daemon: uses startBackground() so CommandExitError is never
+	 *           thrown regardless of ngrok's exit behaviour.
+	 * Step 4 — poll: checks localhost:4040/api/tunnels every 2 s for up to 30 s.
+	 *
+	 * All sandbox.execute() calls are wrapped in try/catch so transient E2B errors
+	 * (e.g. "signal: terminated" on freshly-provisioned sandboxes) never abort setup.
 	 */
 	private static async _startNgrokAndGetUrl(
 		sandbox: SandboxInstance,
@@ -156,7 +162,7 @@ export class LazySandbox extends BaseSandbox {
 		console.log(`${tag} ── starting ngrok setup (dev-server path)`);
 
 		// Step 1: configure authtoken inside the sandbox (required for custom domains).
-		console.log(`${tag} step 1/3 configuring authtoken…`);
+		console.log(`${tag} step 1/4 configuring authtoken…`);
 		try {
 			const authtokenResult = await sandbox.execute(
 				`ngrok config add-authtoken ${authtoken} 2>&1`,
@@ -170,9 +176,36 @@ export class LazySandbox extends BaseSandbox {
 			console.warn(`${tag} authtoken config failed (non-fatal):`, err);
 		}
 
-		// Step 2: start ngrok as a daemon via startBackground().
+		// Step 2: ensure Expo web is running on port 8081.
+		// start_cmd launches it at sandbox boot, but timing or old templates may mean
+		// it hasn't started yet. A quick curl probe decides whether to start it.
+		console.log(`${tag} step 2/4 checking Expo on port 8081…`);
+		try {
+			const probe = await sandbox.execute(
+				"curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/ 2>/dev/null || echo 0",
+			);
+			const httpCode = parseInt(probe.output?.trim() ?? "0", 10);
+			if (!httpCode || probe.exitCode !== 0) {
+				console.log(`${tag} Expo not running — starting bun run web in background…`);
+				const expoCmd =
+					"cd /home/user/app && EXPO_NO_INTERACTIVE=1 EXPO_WEB_PORT=8081 PORT=8081" +
+					" nohup bun run web >> /tmp/expo.log 2>&1";
+				if (sandbox.startBackground) {
+					await sandbox.startBackground(expoCmd);
+				} else {
+					await sandbox.execute(`${expoCmd} &`);
+				}
+				console.log(`${tag} Expo start issued ✔`);
+			} else {
+				console.log(`${tag} Expo already up on port 8081 (HTTP ${httpCode}) ✔`);
+			}
+		} catch (err) {
+			console.warn(`${tag} Expo check/start failed (non-fatal):`, err);
+		}
+
+		// Step 3: start ngrok as a daemon via startBackground().
 		const ngrokCmd = "ngrok http 8081 --log=stdout > /tmp/ngrok.log 2>&1";
-		console.log(`${tag} step 2/3 launching ngrok daemon…`);
+		console.log(`${tag} step 3/4 launching ngrok daemon…`);
 		try {
 			if (sandbox.startBackground) {
 				await sandbox.startBackground(ngrokCmd);
@@ -188,8 +221,7 @@ export class LazySandbox extends BaseSandbox {
 		// Give ngrok 3 seconds to bind before polling.
 		await new Promise<void>((r) => setTimeout(r, 3_000));
 
-		// Step 3: poll localhost:4040/api/tunnels every 2 s for up to 30 s.
-		console.log(`${tag} step 3/3 polling ngrok API…`);
+		// Poll localhost:4040/api/tunnels every 2 s for up to 30 s.
 		const MAX_ATTEMPTS = 15;
 		const INTERVAL_MS = 2_000;
 

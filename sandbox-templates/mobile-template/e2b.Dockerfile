@@ -128,6 +128,10 @@ RUN node -e "const pkg = require('./package.json'); pkg.scripts = pkg.scripts ||
 # Note: ANTHROPIC_API_KEY should be set at runtime via environment variables
 # Do not hardcode API keys in the Docker image for security reasons
 
+# Pre-create .expo cache dirs so bun run lint/start never hit EACCES
+RUN mkdir -p /home/user/app/.expo/cache/eslint && \
+    chmod -R 777 /home/user/app/.expo
+
 # Return to app directory and switch to user
 WORKDIR /home/user/app
 USER user
