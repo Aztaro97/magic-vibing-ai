@@ -139,19 +139,11 @@ export class LazySandbox extends BaseSandbox {
 	}
 
 	/**
-	 * Ensures Expo web is running on port 8081, configures ngrok authtoken,
-	 * starts the ngrok daemon, and polls until the public tunnel URL is available.
+	 * Ensures Expo web is running on port 8081 (waits up to 60 s), configures
+	 * the ngrok auth token, starts the daemon, and polls until the public URL
+	 * is live. Uses a random ngrok URL (dev-server path has no fixed domain).
 	 *
-	 * Step 1 — authtoken: required for any ngrok tunnel (including random URLs).
-	 * Step 2 — Expo: starts `bun run web` in the background if nothing is
-	 *           listening on port 8081. Safe to call even if start_cmd already
-	 *           launched Expo — the check is a quick curl probe.
-	 * Step 3 — ngrok daemon: uses startBackground() so CommandExitError is never
-	 *           thrown regardless of ngrok's exit behaviour.
-	 * Step 4 — poll: checks localhost:4040/api/tunnels every 2 s for up to 30 s.
-	 *
-	 * All sandbox.execute() calls are wrapped in try/catch so transient E2B errors
-	 * (e.g. "signal: terminated" on freshly-provisioned sandboxes) never abort setup.
+	 * Delegates to the shared `setupNgrok` helper from `@acme/sandboxes`.
 	 */
 	private static async _startNgrokAndGetUrl(
 		sandbox: SandboxInstance,
@@ -159,103 +151,10 @@ export class LazySandbox extends BaseSandbox {
 	): Promise<string | null> {
 		const sandboxId = sandbox.id ?? "unknown";
 		const tag = `[ngrok:dev-${sandboxId.slice(0, 8)}]`;
-		console.log(`${tag} ── starting ngrok setup (dev-server path)`);
 
-		// Step 1: configure authtoken inside the sandbox (required for custom domains).
-		console.log(`${tag} step 1/4 configuring authtoken…`);
-		try {
-			const authtokenResult = await sandbox.execute(
-				`ngrok config add-authtoken ${authtoken} 2>&1`,
-			);
-			if (authtokenResult.exitCode !== 0) {
-				console.warn(`${tag} authtoken non-zero exit (${authtokenResult.exitCode}):`, authtokenResult.output);
-			} else {
-				console.log(`${tag} authtoken configured ✔`);
-			}
-		} catch (err) {
-			console.warn(`${tag} authtoken config failed (non-fatal):`, err);
-		}
+		const { setupNgrok } = await import("@acme/sandboxes");
 
-		// Step 2: ensure Expo web is running on port 8081.
-		// start_cmd launches it at sandbox boot, but timing or old templates may mean
-		// it hasn't started yet. A quick curl probe decides whether to start it.
-		console.log(`${tag} step 2/4 checking Expo on port 8081…`);
-		try {
-			const probe = await sandbox.execute(
-				"curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/ 2>/dev/null || echo 0",
-			);
-			const httpCode = parseInt(probe.output?.trim() ?? "0", 10);
-			if (!httpCode || probe.exitCode !== 0) {
-				console.log(`${tag} Expo not running — starting bun run web in background…`);
-				const expoCmd =
-					"cd /home/user/app && EXPO_NO_INTERACTIVE=1 EXPO_WEB_PORT=8081 PORT=8081" +
-					" nohup bun run web >> /tmp/expo.log 2>&1";
-				if (sandbox.startBackground) {
-					await sandbox.startBackground(expoCmd);
-				} else {
-					await sandbox.execute(`${expoCmd} &`);
-				}
-				console.log(`${tag} Expo start issued ✔`);
-			} else {
-				console.log(`${tag} Expo already up on port 8081 (HTTP ${httpCode}) ✔`);
-			}
-		} catch (err) {
-			console.warn(`${tag} Expo check/start failed (non-fatal):`, err);
-		}
-
-		// Step 3: start ngrok as a daemon via startBackground().
-		const ngrokCmd = "ngrok http 8081 --log=stdout > /tmp/ngrok.log 2>&1";
-		console.log(`${tag} step 3/4 launching ngrok daemon…`);
-		try {
-			if (sandbox.startBackground) {
-				await sandbox.startBackground(ngrokCmd);
-			} else {
-				await sandbox.execute(`${ngrokCmd} &`);
-			}
-			console.log(`${tag} ngrok daemon started ✔`);
-		} catch (err) {
-			console.warn(`${tag} ngrok start failed:`, err);
-			return null;
-		}
-
-		// Give ngrok 3 seconds to bind before polling.
-		await new Promise<void>((r) => setTimeout(r, 3_000));
-
-		// Poll localhost:4040/api/tunnels every 2 s for up to 30 s.
-		const MAX_ATTEMPTS = 15;
-		const INTERVAL_MS = 2_000;
-
-		for (let i = 0; i < MAX_ATTEMPTS; i++) {
-			console.log(`${tag} poll ${i + 1}/${MAX_ATTEMPTS}…`);
-			try {
-				const result = await sandbox.execute(
-					"curl -s http://localhost:4040/api/tunnels 2>/dev/null",
-				);
-				if (result.exitCode === 0 && result.output) {
-					try {
-						const data = JSON.parse(result.output) as {
-							tunnels?: Array<{ public_url: string; proto: string }>;
-						};
-						console.log(`${tag} poll ${i + 1} tunnels: ${JSON.stringify(data.tunnels?.map((t) => t.public_url))}`);
-						const httpsTunnel = data.tunnels?.find((t) => t.proto === "https");
-						if (httpsTunnel?.public_url) {
-							console.log(`${tag} ✔ tunnel live → ${httpsTunnel.public_url}`);
-							return httpsTunnel.public_url;
-						}
-					} catch {
-						console.log(`${tag} poll ${i + 1} ngrok API not ready yet (JSON parse failed)`);
-					}
-				} else {
-					console.log(`${tag} poll ${i + 1} ngrok API not reachable (exit=${result.exitCode})`);
-				}
-			} catch (err) {
-				console.log(`${tag} poll ${i + 1} execute error:`, err);
-			}
-			await new Promise<void>((r) => setTimeout(r, INTERVAL_MS));
-		}
-
-		console.warn(`${tag} ✖ tunnel did not come up within 30s`);
-		return null;
+		return setupNgrok(sandbox, { authtoken, tag });
 	}
 
 	get id(): string {

@@ -46,6 +46,10 @@
       "import": "./src/utils/subdomain.ts",
       "types": "./src/utils/subdomain.ts"
     },
+    "./utils/ngrok": {
+      "import": "./src/utils/ngrok-helpers.ts",
+      "types": "./src/utils/ngrok-helpers.ts"
+    },
     "./libs": {
       "import": "./src/libs/index.ts",
       "types": "./src/libs/index.ts"

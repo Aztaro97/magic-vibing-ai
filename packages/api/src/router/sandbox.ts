@@ -3,7 +3,10 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { and, db, eq, project } from "@acme/db";
+import { E2BSandboxBackend } from "@acme/sandboxes";
 import { connectSandbox } from "@acme/sandboxes/libs";
+import { updateProjectSandboxState } from "@acme/sandboxes/lifecycle";
+import { setupNgrokWithFallback } from "@acme/sandboxes/utils/ngrok";
 
 import { protectedProcedure } from "../trpc";
 
@@ -305,4 +308,65 @@ export const sandboxRouter = {
         return { success: true, path: relativePath };
       },
     ),
+
+  ngrokRestart: protectedProcedure
+    .input(z.object({ projectId: z.string().min(1) }))
+    .mutation(async ({ input, ctx }): Promise<{ ngrokUrl: string | null }> => {
+      const ngrokAuthToken = process.env.NGROK_AUTHTOKEN;
+      if (!ngrokAuthToken) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "NGROK_AUTHTOKEN is not configured on the server",
+        });
+      }
+
+      const sandboxId = await getProjectSandboxId(
+        input.projectId,
+        ctx.session.user.id,
+      );
+
+      // Verify E2B provider
+      const [row] = await db
+        .select({ sandboxProvider: project.sandboxProvider })
+        .from(project)
+        .where(
+          and(
+            eq(project.id, input.projectId),
+            eq(project.userId, ctx.session.user.id),
+          ),
+        )
+        .limit(1);
+
+      if (row?.sandboxProvider !== "e2b") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "ngrok tunnels are only supported for E2B sandboxes",
+        });
+      }
+
+      let sandbox: E2BSandboxBackend;
+      try {
+        sandbox = await E2BSandboxBackend.connect(sandboxId);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `Sandbox not available: ${msg}`,
+        });
+      }
+
+      const ngrokDomain = `${input.projectId}.ngrok.dev`;
+      const tag = `[ngrok-trpc:${input.projectId.slice(0, 8)}]`;
+
+      const ngrokUrl = await setupNgrokWithFallback(sandbox, {
+        authtoken: ngrokAuthToken,
+        domain: ngrokDomain,
+        port: 8081,
+        tag,
+      });
+
+      await updateProjectSandboxState(input.projectId, { ngrokUrl });
+
+      return { ngrokUrl };
+    }),
 } satisfies TRPCRouterRecord;

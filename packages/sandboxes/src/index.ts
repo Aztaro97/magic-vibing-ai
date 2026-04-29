@@ -5,6 +5,8 @@ export {
   pauseProjectSandbox,
   destroyProjectSandbox,
   releaseSandbox,
+  updateProjectSandboxState,
+  getProjectSandboxState,
 } from "./lifecycle/manager";
 
 // ── Classifier — useful for testing routing decisions in isolation ───────────
@@ -31,6 +33,13 @@ export { buildSandboxEnvVars } from "./constants/sandbox-env";
 export { getExpoSubdomain } from "./utils/subdomain";
 export { isSandboxNotFoundError } from "./utils/error-detection";
 export { syncFilesToSandbox } from "./utils/file-sync";
+export {
+  setupNgrok,
+  setupNgrokWithFallback,
+  ensureExpoRunning,
+  waitForPortReady,
+} from "./utils/ngrok-helpers";
+export type { NgrokSandboxLike, NgrokSetupOptions } from "./utils/ngrok-helpers";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export type {
