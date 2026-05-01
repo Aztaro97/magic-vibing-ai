@@ -91,33 +91,16 @@ USER root
 # Expose the default Expo port
 EXPOSE 8081
 
-# Switch to user for bun operations
-USER user
-
-# Initialize bun project for claude-sdk
-RUN bun init -y
-
-
-# Install EAS CLI globally
-# RUN bun install --global eas-cli
-
 # Create and set permissions for Metro cache directory
-RUN mkdir -p /tmp/metro-cache
-USER root
-RUN chmod 777 /tmp/metro-cache
+RUN mkdir -p /tmp/metro-cache && chmod 777 /tmp/metro-cache
 USER user
 ENV TMPDIR=/tmp/metro-cache
 
 # Increase Node.js memory limit
 ENV NODE_OPTIONS="--max_old_space_size=4096"
 
-# Install expo/ngrok
-RUN bun install @expo/ngrok
-
-# Pinggy is now installed in the app directory, not here
-
-# Install dev dependencies for claude-sdk
-RUN bun install --dev @types/node@^24.0.3
+# @expo/ngrok is already in devDependencies; @types/node is in devDependencies.
+# Both are installed by the main `bun install` above — no extra install step needed.
 
 # Switch back to root for file operations
 USER root

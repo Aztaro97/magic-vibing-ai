@@ -97,6 +97,23 @@ export async function ensureExpoRunning(
 
 	// Issue start command
 	console.log(`${tag} Expo not detected on port 8081 — starting bun run web…`);
+
+	// Verify expo-router entry exists; if not, repair node_modules with --ignore-scripts
+	// to skip the postinstall patch-package step that fails on already-patched files.
+	const repairCmd =
+		"cd /home/user/app && test -f node_modules/expo-router/entry.js" +
+		" || (echo 'expo-router missing, repairing node_modules...' && bun install --ignore-scripts 2>&1 | tail -5)";
+	try {
+		const repairResult = await sandbox.execute(repairCmd);
+		if (repairResult.exitCode !== 0) {
+			console.warn(`${tag} node_modules repair attempt failed (non-fatal):`, repairResult.output.slice(0, 200));
+		} else if (repairResult.output.includes("repairing")) {
+			console.log(`${tag} node_modules repaired ✔`);
+		}
+	} catch (err) {
+		console.warn(`${tag} node_modules check failed (non-fatal):`, err);
+	}
+
 	const expoCmd =
 		"cd /home/user/app && EXPO_NO_INTERACTIVE=1 EXPO_WEB_PORT=8081 PORT=8081" +
 		" nohup bun run web >> /tmp/expo.log 2>&1";

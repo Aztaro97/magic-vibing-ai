@@ -18,7 +18,7 @@
     "start:web:tunnel": "expo start --web --tunnel",
     "test:deploy": "node ../test-local-deploy.js",
     "test:deploy:project": "node ../test-local-deploy.js",
-    "postinstall": "patch-package && rm -rf node_modules/expo/node_modules/@expo/cli"
+    "postinstall": "(patch-package || true) && (rm -rf node_modules/expo/node_modules/@expo/cli 2>/dev/null || true)"
   },
   "dependencies": {
     "@ai-sdk/react": "^1.2.11",
@@ -92,6 +92,7 @@
     "@babel/core": "^7.28.0",
     "@babel/plugin-syntax-jsx": "^7.27.1",
     "@expo/ngrok": "^4.1.0",
+    "@types/node": "^24.0.3",
     "@types/react": "~19.1.10",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
