@@ -11,6 +11,8 @@
 # const sandbox = await Sandbox.create('mobile-template')
 
 team_id = "8bfae4ef-a1a9-4183-b2a5-4b59b8e19aec"
+memory_mb = 8_192
+cpu_count = 8
 start_cmd = "cd /home/user/app && EXPO_NO_INTERACTIVE=1 EXPO_WEB_PORT=8081 PORT=8081 nohup bun run web > /tmp/expo.log 2>&1 & echo 'sandbox ready'"
 dockerfile = "e2b.Dockerfile"
 template_name = "mobile-template"
