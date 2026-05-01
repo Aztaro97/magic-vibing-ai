@@ -1,7 +1,8 @@
 "use client";
 
 import type { AIMessage } from "@langchain/core/messages";
-import { useEffect, useRef, useState } from "react";
+import type { ToolCallWithResult } from "@langchain/react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
 import type { Fragment } from "@acme/db";
@@ -46,13 +47,13 @@ function AssistantBubble({
   isStreaming,
 }: {
   message: AIMessage;
-  toolCalls: ReturnType<typeof useAgentStream>["toolCalls"];
+  toolCalls: ToolCallWithResult[];
   isStreaming?: boolean;
 }) {
   const text = typeof message.content === "string" ? message.content : "";
   const msgToolCallIds = (message.tool_calls ?? []).map((t) => t.id ?? "");
-  const relevant = toolCalls.filter((tc) =>
-    msgToolCallIds.includes(tc.call.id),
+  const relevant = toolCalls.filter((tc: ToolCallWithResult) =>
+    msgToolCallIds.includes(tc.call.id ?? ""),
   );
 
   return (
@@ -84,8 +85,11 @@ function AssistantBubble({
       <div className="flex flex-col gap-y-2 pl-9">
         {relevant.length > 0 && (
           <div className="space-y-0.5">
-            {relevant.map((tc) => (
-              <ToolCard key={tc.call.id} toolCall={tc} />
+            {relevant.map((tc: ToolCallWithResult, i) => (
+              <ToolCard
+                key={tc.call.id ?? `${tc.call.name}-${i}`}
+                toolCall={tc}
+              />
             ))}
           </div>
         )}
@@ -99,6 +103,24 @@ function AssistantBubble({
             <div className="bg-muted-foreground/40 h-1.5 w-1.5 animate-bounce rounded-full" />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Live activity strip — orphaned tool calls not yet attached to any message.
+// Handles the gap between a tool being dispatched and its AI message arriving.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function LiveActivityStrip({ toolCalls }: { toolCalls: ToolCallWithResult[] }) {
+  if (toolCalls.length === 0) return null;
+  return (
+    <div className="px-2 pb-2">
+      <div className="space-y-0.5">
+        {toolCalls.map((tc: ToolCallWithResult, i) => (
+          <ToolCard key={tc.call.id ?? `${tc.call.name}-${i}`} toolCall={tc} />
+        ))}
       </div>
     </div>
   );
@@ -122,7 +144,7 @@ export default function AgentPanel({
   const {
     messages,
     isStreaming,
-    toolCalls,
+    toolCalls: rawToolCalls,
     interrupt,
     error,
     canRejoin,
@@ -130,6 +152,7 @@ export default function AgentPanel({
     approveHitl,
     rejoin,
     isReady,
+    disconnect,
   } = useAgentStream({
     projectId,
     sessionId,
@@ -146,11 +169,34 @@ export default function AgentPanel({
     },
   });
 
+  // Coerce to typed array — useStream's toolCalls inference degrades to any[]
+  // when the hook's return type can't be resolved across package boundaries.
+  const toolCalls = rawToolCalls as ToolCallWithResult[];
+
+  // Collect all tool-call IDs that already belong to a rendered AI message.
+  // Any call NOT in this set is "orphaned" — dispatched before its AI message
+  // has streamed. We surface those in the LiveActivityStrip below.
+  const attachedIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const msg of messages) {
+      if (msg._getType() === "ai") {
+        for (const tc of (msg as AIMessage).tool_calls ?? []) {
+          if (tc.id) ids.add(tc.id);
+        }
+      }
+    }
+    return ids;
+  }, [messages]);
+
+  const orphanedToolCalls = useMemo(
+    () =>
+      toolCalls.filter(
+        (tc: ToolCallWithResult) => !attachedIds.has(tc.call.id ?? ""),
+      ),
+    [toolCalls, attachedIds],
+  );
+
   // ── Auto-send the initial prompt once the stream hook is ready ─────────────
-  // Fires only on first project load when:
-  //   - the DB has a single USER message (passed via initialPrompt), and
-  //   - the LangGraph thread has no messages yet (stream.messages is empty).
-  // The second check prevents a refresh mid-run from resending the prompt.
   useEffect(() => {
     if (!initialPrompt || !isReady || didAutoSend.current) return;
     if (messages.length > 0) {
@@ -164,7 +210,7 @@ export default function AgentPanel({
   // ── Auto-scroll ─────────────────────────────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isStreaming]);
+  }, [messages.length, toolCalls.length, isStreaming]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -201,6 +247,9 @@ export default function AgentPanel({
             return null;
           })}
 
+          {/* Orphaned tool calls: dispatched but not yet in an AI message */}
+          {isStreaming && <LiveActivityStrip toolCalls={orphanedToolCalls} />}
+
           {interrupt && (
             <HITLCard
               interrupt={interrupt as { value: unknown }}
@@ -229,7 +278,7 @@ export default function AgentPanel({
               </span>
               <button
                 onClick={rejoin}
-                className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                className="cursor-pointer font-medium text-blue-600 hover:underline dark:text-blue-400"
               >
                 Rejoin stream
               </button>
@@ -248,6 +297,7 @@ export default function AgentPanel({
           model={model}
           onModelChange={setModel}
           onSubmit={(value) => send(value, model)}
+          onStop={disconnect}
         />
       </div>
     </div>
