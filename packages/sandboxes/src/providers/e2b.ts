@@ -58,14 +58,19 @@ export class E2BSandboxBackend extends BaseSandbox {
 	/**
 	 * Creates a new E2B sandbox and returns an `E2BSandboxBackend` instance.
 	 *
-	 * @param hints   Task hints used to select the appropriate E2B template.
-	 * @param timeout Max sandbox lifetime in seconds (default: 300 = 5 min).
-	 * @param envVars Additional env vars to inject (merged with hints.envVars).
+	 * @param hints    Task hints used to select the appropriate E2B template.
+	 * @param timeout  Max sandbox lifetime in seconds (default: 300 = 5 min).
+	 * @param envVars  Additional env vars to inject (merged with hints.envVars).
+	 * @param metadata Key-value pairs attached to the sandbox (visible in E2B webhooks
+	 *                 as `event_data.sandbox_metadata`). Pass `projectId`/`sessionId`
+	 *                 so webhook handlers can look up the project before `sandboxId`
+	 *                 is written to the DB.
 	 */
 	static async create(
 		hints: TaskHints = {},
 		timeout = 300,
 		envVars?: Record<string, string>,
+		metadata?: Record<string, string>,
 	): Promise<E2BSandboxBackend> {
 		const apiKey = env.E2B_API_KEY;
 		if (!apiKey) throw new Error("E2B_API_KEY is not set");
@@ -78,6 +83,7 @@ export class E2BSandboxBackend extends BaseSandbox {
 			apiKey,
 			timeoutMs: timeout * 1_000,
 			envs: Object.keys(mergedEnvs).length > 0 ? mergedEnvs : undefined,
+			metadata: metadata && Object.keys(metadata).length > 0 ? metadata : undefined,
 		});
 
 		return new E2BSandboxBackend(sandbox);

@@ -132,7 +132,7 @@ export async function resolveSandbox(
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function provisionE2B(ctx: ProvisionContext): Promise<ResolvedSandbox> {
-	const { sessionId, hints, complexity, acquiredAt } = ctx;
+	const { projectId, sessionId, hints, complexity, acquiredAt } = ctx;
 
 	// E2B timeout: clamp to SANDBOX_TIMEOUT_SECONDS or task estimate + buffer
 	const configuredTimeout = Number(env.SANDBOX_TIMEOUT_SECONDS ?? 300);
@@ -140,7 +140,11 @@ async function provisionE2B(ctx: ProvisionContext): Promise<ResolvedSandbox> {
 		? Math.min(hints.estimatedDurationSeconds * 1.5, configuredTimeout)
 		: configuredTimeout;
 
-	const backend = await E2BSandboxBackend.create(hints, Math.ceil(taskTimeout));
+	// Attach projectId + sessionId as sandbox metadata so E2B lifecycle webhooks
+	// can look up the project row before sandboxId is written to the DB.
+	const sandboxMetadata: Record<string, string> = { projectId, sessionId };
+
+	const backend = await E2BSandboxBackend.create(hints, Math.ceil(taskTimeout), undefined, sandboxMetadata);
 
 	// Track concurrency for the org
 	if (ctx.orgId) incrementActiveCount(ctx.orgId);
