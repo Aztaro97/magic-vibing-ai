@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 /**
  * Verify an E2B webhook signature.
@@ -18,5 +18,7 @@ export function verifyE2bSignature(
 		.digest("base64")
 		.replace(/=+$/, "");
 
-	return expected === signature;
+	if (expected.length !== signature.length) return false;
+
+	return timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
 }

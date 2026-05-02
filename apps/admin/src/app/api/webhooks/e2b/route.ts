@@ -8,11 +8,7 @@ export async function POST(request: NextRequest) {
 	const rawBody = await request.text();
 	const signature = request.headers.get("e2b-signature");
 
-	const result = await handleE2bWebhook(
-		rawBody,
-		signature,
-		env.E2B_WEBHOOK_SECRET,
-	);
+	const result = await handleE2bWebhook(rawBody, signature, env.E2B_WEBHOOK_SECRET);
 
 	if (!result.success) {
 		return NextResponse.json(
@@ -21,8 +17,5 @@ export async function POST(request: NextRequest) {
 		);
 	}
 
-	return NextResponse.json(
-		{ received: true, eventId: result.eventId },
-		{ status: 200 },
-	);
+	return NextResponse.json({ received: true, eventId: result.eventId }, { status: 200 });
 }
