@@ -53,6 +53,9 @@ export function PreviewPanel({ projectId, mode }: PreviewPanelProps) {
   const previewUrl = project.ngrokUrl ?? undefined;
   const sandboxReady = Boolean(project.sandboxId);
 
+  console.log("project.sandboxId", project.sandboxId);
+  console.log("sandboxReady", sandboxReady);
+
   const fetchStructure = useCallback(async (): Promise<FileItem[]> => {
     const data = await queryClient.fetchQuery(
       trpc.sandbox.getStructure.queryOptions({ projectId }),

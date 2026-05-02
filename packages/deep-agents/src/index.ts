@@ -1,3 +1,4 @@
+import type { BackendRuntime } from "deepagents";
 import { env } from "../env";
 import { LazySandbox } from "./sandbox/lazy-sandbox";
 import { createMagicVibingAgent } from "./supervisor";
@@ -17,6 +18,7 @@ export {
 	SUPERVISOR_PROMPT,
 	TEST_AGENT_PROMPT
 } from "./prompts";
+export { LazySandbox } from "./sandbox/lazy-sandbox";
 export {
 	ALL_SUBAGENTS,
 	codeAgent,
@@ -26,7 +28,6 @@ export {
 	reviewAgent,
 	testAgent
 } from "./subagents";
-export { LazySandbox } from "./sandbox/lazy-sandbox";
 export { createMagicVibingAgent } from "./supervisor";
 export {
 	transformAgentStream,
@@ -49,7 +50,7 @@ export type {
 // side effects at import time (console.warn, process.on listeners). The graph
 // is still exported as a top-level const for LangGraph compatibility.
 
-function buildDevGraph() {
+async function buildDevGraph(runtime?: BackendRuntime) {
 	const hasSandboxProvider = Boolean(env.E2B_API_KEY) || Boolean(env.DAYTONA_API_KEY);
 
 	if (!hasSandboxProvider) {
@@ -60,7 +61,9 @@ function buildDevGraph() {
 		);
 	}
 
-	const sandbox = hasSandboxProvider ? new LazySandbox() : undefined;
+	// Pass runtime to LazySandbox so _autoProvision can extract projectId/sessionId
+	// from runtime.configurable when the agent is invoked via the LangGraph dev server.
+	const sandbox = hasSandboxProvider ? new LazySandbox({ runtime }) : undefined;
 
 	// Ensure lazy-provisioned sandbox is cleaned up on process exit (prevents
 	// leaked E2B sandboxes billed by uptime in the dev server).
@@ -73,4 +76,4 @@ function buildDevGraph() {
 	return createMagicVibingAgent({ sandbox });
 }
 
-export const graph = buildDevGraph();
+export const graph = async (runtime?: BackendRuntime) => await buildDevGraph(runtime);

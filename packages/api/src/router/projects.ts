@@ -39,7 +39,7 @@ async function mintServiceToken(projectId: string, userId: string) {
  * Uses a service JWT — not tied to any user request/cookie.
  * Fails silently so the project is still created even if LangGraph is down.
  */
-async function ensureLangGraphThread(projectId: string, userId: string) {
+async function ensureLangGraphThread(projectId: string, userId: string, description: string) {
 	try {
 		const svcToken = await mintServiceToken(projectId, userId);
 		const client = new Client({
@@ -51,8 +51,8 @@ async function ensureLangGraphThread(projectId: string, userId: string) {
 			threadId: projectId,
 			metadata: {
 				projectId,
-				owner: userId,  // required by auth.on filter
 				userId,
+				description,
 			},
 		});
 	} catch (err: unknown) {
@@ -78,6 +78,7 @@ export const projectRouter = {
 		)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
+			const sessionId = ctx.session.session.id;
 
 			// 1. Create project + first USER message in a single transaction
 			const result = await db.transaction(async (tx) => {
@@ -112,7 +113,7 @@ export const projectRouter = {
 			// 2. Pre-create the LangGraph thread with thread_id = projectId (async)
 			//    Fire-and-forget is intentional — project creation succeeds regardless.
 			//    The token route has a safety-net creation too.
-			void ensureLangGraphThread(result.id, userId);
+			void ensureLangGraphThread(result.id, sessionId, input.value);
 
 			// 3. Return just the project id. Navigation: /project/{id} — no params.
 			return result;

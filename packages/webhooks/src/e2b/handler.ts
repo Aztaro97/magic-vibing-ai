@@ -145,14 +145,32 @@ export async function handleE2bWebhook(
 
   // ── 5. Update project sandbox status ──────────
   // Uses a separate mapping aligned with SandboxStatus ("active"|"paused"|"destroyed").
-  // `created` is excluded: the project row has no sandboxId yet when this fires.
   const newProjectStatus = EVENT_TO_PROJECT_STATUS[payload.type];
 
   if (newProjectStatus) {
-    await db
-      .update(project)
-      .set({ sandboxStatus: newProjectStatus, updatedAt: new Date() })
-      .where(eq(project.sandboxId, payload.sandbox_id));
+    const projectIdFromMeta = eventData.sandbox_metadata?.projectId;
+
+    if (projectIdFromMeta) {
+      // Direct lookup by project.id from sandbox metadata — reliable for all events,
+      // including `created` where sandboxId is not yet written to the project row.
+      await db
+        .update(project)
+        .set({
+          // On `created`, also stamp the sandboxId so it's available immediately
+          ...(payload.type === "sandbox.lifecycle.created"
+            ? { sandboxId: payload.sandbox_id }
+            : {}),
+          sandboxStatus: newProjectStatus,
+          updatedAt: new Date(),
+        })
+        .where(eq(project.id, projectIdFromMeta));
+    } else {
+      // Fallback for sandboxes created without metadata (dev-server path or old rows)
+      await db
+        .update(project)
+        .set({ sandboxStatus: newProjectStatus, updatedAt: new Date() })
+        .where(eq(project.sandboxId, payload.sandbox_id));
+    }
   }
 
   return { success: true, eventId: payload.id };

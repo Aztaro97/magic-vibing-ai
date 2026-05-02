@@ -1,4 +1,5 @@
 import type {
+	BackendRuntime,
 	ExecuteResponse,
 	FileDownloadResponse,
 	FileUploadResponse,
@@ -16,9 +17,9 @@ import { CommandExitError } from "e2b";
 // Two modes:
 //   1. Factory injection: caller provides a `() => Promise<BaseSandbox>` factory
 //      (used by the API router which resolves the sandbox via lifecycle manager)
-//   2. Auto-provision: dynamically imports @acme/sandboxes and uses
-//      `resolveSandbox()` to auto-select E2B or Daytona based on available keys
-//      and task complexity (used by the LangGraph dev server graph)
+//   2. Auto-provision: stores BackendRuntime and calls resolveSandbox() lazily,
+//      extracting projectId/sessionId/description from runtime.configurable
+//      (used by the LangGraph dev server graph)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Duck-typed interface for the inner sandbox (avoids type mismatch across packages). */
@@ -34,10 +35,15 @@ interface SandboxInstance {
 	close?(): Promise<void>;
 }
 
+type LazySandboxOptions =
+	| { factory: () => Promise<BaseSandbox> }
+	| { runtime?: BackendRuntime };
+
 export class LazySandbox extends BaseSandbox {
 	private _inner: SandboxInstance | null = null;
 	private _initPromise: Promise<SandboxInstance> | null = null;
-	private _factory: (() => Promise<BaseSandbox>) | undefined;
+	private readonly _factory: (() => Promise<BaseSandbox>) | undefined;
+	private readonly _runtime: BackendRuntime | undefined;
 
 	/**
 	 * Holds the live ngrok random preview URL once the tunnel is up.
@@ -48,12 +54,19 @@ export class LazySandbox extends BaseSandbox {
 	public ngrokUrl: string | null = null;
 
 	/**
-	 * @param factory  Optional async factory that returns a ready `BaseSandbox`.
-	 *                 When omitted, auto-provisions via `@acme/sandboxes` router.
+	 * @param options  Either:
+	 *   - `{ factory }` — async factory returning a ready `BaseSandbox`
+	 *                     (API router path: factory resolves via lifecycle manager)
+	 *   - `{ runtime }` — BackendRuntime whose configurable carries projectId/sessionId
+	 *                     (LangGraph dev server path: auto-provisions via `@acme/sandboxes`)
 	 */
-	constructor(factory?: () => Promise<BaseSandbox>) {
+	constructor(options: LazySandboxOptions) {
 		super();
-		this._factory = factory;
+		if ("factory" in options) {
+			this._factory = options.factory;
+		} else {
+			this._runtime = options.runtime;
+		}
 	}
 
 	/** Lazily provisions the sandbox on first use. Thread-safe via promise dedup. */
@@ -69,8 +82,8 @@ export class LazySandbox extends BaseSandbox {
 					sandbox = await this._factory();
 				} else {
 					// Auto-provision via sandboxes router (dev server path)
-					// Also starts ngrok and stores the random preview URL.
-					sandbox = await LazySandbox._autoProvision(this);
+					// Passes `this` so _autoProvision can write back ngrokUrl.
+					sandbox = await LazySandbox._autoProvision(this._runtime, this);
 				}
 
 				this._inner = sandbox as unknown as SandboxInstance;
@@ -90,25 +103,42 @@ export class LazySandbox extends BaseSandbox {
 	 * Dynamically imports to avoid hard compile-time dependency.
 	 * Selects E2B or Daytona based on available API keys and classification.
 	 *
+	 * Extracts projectId, sessionId, and description from runtime.configurable
+	 * so the real project row is updated (never uses fake identifiers).
+	 *
 	 * After provisioning an E2B sandbox, starts ngrok on port 8081 and polls
-	 * localhost:4040/api/tunnels to capture the random preview URL
-	 * (e.g. https://abc123.ngrok-free.app). Stores URL in `owner.ngrokUrl`.
+	 * localhost:4040/api/tunnels to capture the random preview URL.
+	 * Stores the URL in `owner.ngrokUrl`.
 	 *
 	 * NOTE: This path is only used by the LangGraph dev server graph
 	 * (`export const graph` in index.ts). Production API calls inject the
 	 * sandbox via factory from `resolveProjectSandbox()` instead.
 	 * orgId is intentionally omitted — dev-server mode bypasses concurrency limits.
 	 */
-	private static async _autoProvision(owner: LazySandbox): Promise<BaseSandbox> {
+	private static async _autoProvision(
+		runtime: BackendRuntime | undefined,
+		owner: LazySandbox,
+	): Promise<BaseSandbox> {
 		const { resolveSandbox } = await import("@acme/sandboxes");
 
+		const configurable = runtime?.configurable as Record<string, string> | undefined;
+		const projectId = configurable?.projectId;
+		const sessionId = configurable?.sessionId ?? configurable?.thread_id;
+		const description = configurable?.description;
+
+		if (!projectId || !sessionId) {
+			throw new Error(
+				"[LazySandbox] Cannot auto-provision: runtime.configurable must include " +
+				"`projectId` and `sessionId` (or `thread_id`). " +
+				"Pass these via the LangGraph invocation config.",
+			);
+		}
+
 		const resolved = await resolveSandbox({
-			projectId: "dev-server",
-			sessionId: `dev-${Date.now()}`,
+			projectId,
+			sessionId,
 			// orgId intentionally omitted: dev-server mode bypasses concurrency limits
-			hints: {
-				description: "LangGraph dev server sandbox",
-			},
+			hints: { description },
 		});
 
 		if (!resolved) {
@@ -119,8 +149,8 @@ export class LazySandbox extends BaseSandbox {
 		}
 
 		// Start ngrok on E2B sandboxes and capture the random preview URL.
-		// This mirrors the lifecycle manager's startNgrokAndGetUrl() behaviour
-		// so the dev server path gets the same URL surfacing as the production path.
+		// Writes back to `owner.ngrokUrl` — `_autoProvision` receives the instance
+		// so it can update the non-static field.
 		if (resolved.provider === "e2b") {
 			const env = await import("../../env").then((m) => m.env);
 			if (env.NGROK_AUTHTOKEN) {

@@ -79,7 +79,7 @@ export async function resolveSandbox(
 
 	// ── 1. Reconnect to an existing sandbox (HITL resume, Inngest retry) ─────
 	if (existingId && existingProvider) {
-		return reconnectExisting(existingId, existingProvider, options.orgId!, projectId, acquiredAt);
+		return reconnectExisting(existingId, existingProvider, options.orgId!, projectId, sessionId, acquiredAt);
 	}
 
 	// ── 1b. Enforce per-org concurrency limit ────────────────────────────────
@@ -219,6 +219,7 @@ async function reconnectExisting(
 	provider: SandboxProvider,
 	orgId: string,
 	projectId: string,
+	sessionId: string,
 	acquiredAt: number,
 ): Promise<ResolvedSandbox> {
 	if (provider === "daytona") {
@@ -242,7 +243,7 @@ async function reconnectExisting(
 
 	// E2B sandboxes can't be reconnected by ID from a separate process — they
 	// are identified by their kernel session. Treat as a fresh provision.
-	const backend = await E2BSandboxBackend.create({}, 300);
+	const backend = await E2BSandboxBackend.create({}, 300, undefined, { projectId, sessionId });
 	return {
 		instance: backend as unknown as BaseSandbox,
 		provider: "e2b",
